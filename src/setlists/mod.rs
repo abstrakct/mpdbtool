@@ -25,6 +25,10 @@ pub struct Setlist {
     pub source: Option<String>,
     pub artist: Artist,
     pub venue: Venue,
+    pub tour: Option<Tour>,
+    pub notes: Option<String>,
+    #[serde(rename = "sets")]
+    pub sets: Sets,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -51,4 +55,33 @@ pub struct City {
 pub struct Country {
     pub name: String,
     pub code: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Tour {
+    pub name: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Sets {
+    pub set: Vec<Set>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Set {
+    #[serde(rename = "name")]
+    pub name: Option<String>,
+    #[serde(rename = "encore")]
+    pub encore: Option<String>,
+    #[serde(rename = "song")]
+    pub songs: Vec<Song>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Song {
+    #[serde(rename = "name")]
+    pub name: String,
+    pub segue: Option<String>,
+    #[serde(rename = "cover")]
+    pub artist: Option<Artist>,
 }
