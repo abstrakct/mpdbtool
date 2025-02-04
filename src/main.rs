@@ -1,6 +1,7 @@
 mod setlists;
-
 use setlists::Setlists;
+
+mod tests;
 
 fn main() -> std::io::Result<()> {
     let file = std::fs::read_to_string("master_subset.xml")?;
@@ -36,7 +37,13 @@ fn main() -> std::io::Result<()> {
             }
             for song in set.songs {
                 println!("{}", song.name);
-                if let Some(segue) = song.segue {
+                if song.original_artist.is_some() {
+                    println!(
+                        "-- COVER!!! Original Artist: {}",
+                        song.original_artist.unwrap().name
+                    );
+                }
+                if song.segue.is_some() {
                     println!("->");
                 }
             }
