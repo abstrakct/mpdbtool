@@ -4,5 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+log = "0.4.25"
 serde = { version = "1.0.217", features = ["derive"] }
 serde-xml-rust = "0.6.0"
