@@ -84,4 +84,5 @@ pub struct Song {
     pub segue: Option<String>,
     #[serde(rename = "cover")]
     pub original_artist: Option<Artist>,
+    pub notes: Option<String>,
 }

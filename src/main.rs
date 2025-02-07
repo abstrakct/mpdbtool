@@ -43,6 +43,9 @@ fn main() -> std::io::Result<()> {
                         song.original_artist.unwrap().name
                     );
                 }
+                if song.notes.is_some() {
+                    println!("Song notes: {}", song.notes.unwrap());
+                }
                 if song.segue.is_some() {
                     println!("->");
                 }
