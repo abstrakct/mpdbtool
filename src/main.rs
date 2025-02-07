@@ -3,12 +3,24 @@ use setlists::Setlists;
 
 mod tests;
 
+fn setlists_to_db(master: Setlists) -> std::io::Result<()> {
+    let setlist = master.data[3].clone();
+    let x = serde_json::to_string(&setlist).unwrap();
+    println!("{}", x);
+    Ok(())
+}
+
 fn main() -> std::io::Result<()> {
     let file = std::fs::read_to_string("master_subset.xml")?;
-
-    // let master: Setlists = serde_xml_rust::from_str(&file).unwrap();
     let master = Setlists::from_xml(&file).unwrap();
 
+    setlists_to_db(master)?;
+
+    Ok(())
+}
+
+#[allow(dead_code)]
+fn dump_setlists(master: Setlists) {
     for setlist in master.data {
         println!(
             "Artist: {} (mbid={})",
@@ -53,6 +65,4 @@ fn main() -> std::io::Result<()> {
         }
         println!("--------------------");
     }
-
-    Ok(())
 }
