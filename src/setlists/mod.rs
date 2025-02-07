@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 // setlist.status should be Enum
 // setlist.event_date should maybe be some date type
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Setlists {
     #[serde(rename = "setlist")]
     pub data: Vec<Setlist>,
@@ -16,7 +16,7 @@ impl Setlists {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Setlist {
     #[serde(rename = "status")]
     pub status: String,
@@ -31,7 +31,7 @@ pub struct Setlist {
     pub sets: Sets,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Artist {
     pub name: String,
     #[serde(rename = "sortName")]
@@ -39,35 +39,35 @@ pub struct Artist {
     pub mbid: Option<String>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Venue {
     pub name: String,
     pub city: City,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct City {
     pub name: String,
     pub country: Country,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Country {
     pub name: String,
     pub code: Option<String>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Tour {
     pub name: String,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Sets {
     pub set: Vec<Set>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Set {
     #[serde(rename = "name")]
     pub name: Option<String>,
@@ -77,7 +77,7 @@ pub struct Set {
     pub songs: Vec<Song>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Song {
     #[serde(rename = "name")]
     pub name: String,
