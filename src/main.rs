@@ -1,12 +1,41 @@
-mod setlists;
-use setlists::Setlists;
+use mpdblib::*;
+use std::collections::HashSet;
 
 mod tests;
+
+// Possible flow:
+// Make vector of all unique counties, add each
+// same with cities etc
+//
+
+#[allow(dead_code)]
+fn get_all_countries(master: &Setlists) -> HashSet<String> {
+    master
+        .data
+        .iter()
+        .map(|s| s.venue.city.country.name.clone())
+        .collect()
+}
+
+#[allow(dead_code)]
+fn get_all_cities(master: &Setlists) -> HashSet<String> {
+    master
+        .data
+        .iter()
+        .map(|s| s.venue.city.name.clone())
+        .collect()
+}
 
 fn setlists_to_db(master: Setlists) -> std::io::Result<()> {
     let setlist = master.data[3].clone();
     let x = serde_json::to_string(&setlist).unwrap();
     println!("{}", x);
+
+    //let countries = get_all_countries(&master);
+    //println!("{:?}", countries);
+    //let cities = get_all_cities(&master);
+    //println!("{:?}", cities);
+
     Ok(())
 }
 

@@ -21,10 +21,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "78ca9ab1a0babb1e7d5695e3530886289c18cf2f87ec19a575a0abdce112e3a3"
 
 [[package]]
+name = "mpdblib"
+version = "0.1.0"
+source = "git+http://git.darkstar.local/rolf/mpdblib.git#27efc1f70be9916dc448c200023f2a29d2cef531"
+dependencies = [
+ "serde",
+ "serde-xml-rust",
+]
+
+[[package]]
 name = "mpdbtool"
 version = "0.1.0"
 dependencies = [
  "log",
+ "mpdblib",
  "serde",
  "serde-xml-rust",
  "serde_json",
