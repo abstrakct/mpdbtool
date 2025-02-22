@@ -5,12 +5,13 @@ use std::collections::HashSet;
 
 mod tests;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 struct Country {
     name: String,
     id: i32,
 }
 
+#[derive(Deserialize, Debug)]
 struct MPDB {
     countries: Vec<Country>,
 }
@@ -104,6 +105,7 @@ async fn main() {
         Ok(c) => {
             println!("Added all countries");
             mpdb.countries = c;
+            println!("{:?}", mpdb.countries);
         }
         Err(e) => println!("Error adding countries: {e}"),
     }
