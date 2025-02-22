@@ -20,6 +20,13 @@ impl MPDB {
     fn new() -> MPDB {
         MPDB { countries: vec![] }
     }
+
+    fn get_country_id(&self, country_name: &str) -> Option<i32> {
+        self.countries
+            .iter()
+            .find(|c| c.name == country_name)
+            .map(|c| c.id)
+    }
 }
 
 const MPDB_BASE_URL: &str = "http://localhost:5150";
