@@ -12,13 +12,17 @@ struct Country {
 }
 
 #[derive(Deserialize, Debug)]
-struct MPDB {
+struct Mpdb {
+    master: Setlists,
     countries: Vec<Country>,
 }
 
-impl MPDB {
-    fn new() -> MPDB {
-        MPDB { countries: vec![] }
+impl Mpdb {
+    fn new() -> Mpdb {
+        Mpdb {
+            master: Setlists::new(),
+            countries: vec![],
+        }
     }
 
     fn get_country_id(&self, country_name: &str) -> Option<i32> {
@@ -26,6 +30,42 @@ impl MPDB {
             .iter()
             .find(|c| c.name == country_name)
             .map(|c| c.id)
+    }
+
+    pub async fn add_all_countries(&self) -> reqwest::Result<Vec<Country>> {
+        let countries = get_all_countries(&self.master);
+        let client = reqwest::Client::new();
+        let url = format!("{}/api/countries", MPDB_BASE_URL);
+
+        let existing_countries = client.get(&url).send().await?;
+        let existing_countries: Vec<Country> = existing_countries.json().await?;
+        let existing_countries: HashSet<String> =
+            existing_countries.iter().map(|c| c.name.clone()).collect();
+
+        // println!("Existing countries: {existing_countries:?}");
+
+        for country in countries {
+            println!("Adding country: {country}");
+
+            // Check if country already exists
+            if existing_countries.contains(&country) {
+                println!("Country '{country}' already exists - skipping.");
+                continue;
+            }
+
+            // Country doesn't exist, so add it
+            let data = serde_json::json!({"name": country});
+            let res = client.post(&url).json(&data).send().await?;
+            if res.status().is_success() {
+                println!("Added country:  {country}");
+            } else {
+                println!("Error adding country: {country}");
+            }
+        }
+
+        let existing_countries = client.get(&url).send().await?;
+        let existing_countries: Vec<Country> = existing_countries.json().await?;
+        Ok(existing_countries)
     }
 }
 
@@ -63,51 +103,15 @@ fn setlists_to_db(master: Setlists) -> reqwest::Result<()> {
     Ok(())
 }
 
-async fn add_all_countries(master: &Setlists) -> reqwest::Result<Vec<Country>> {
-    let countries = get_all_countries(master);
-    let client = reqwest::Client::new();
-    let url = format!("{}/api/countries", MPDB_BASE_URL);
-
-    let existing_countries = client.get(&url).send().await?;
-    let existing_countries: Vec<Country> = existing_countries.json().await?;
-    let existing_countries: HashSet<String> =
-        existing_countries.iter().map(|c| c.name.clone()).collect();
-
-    // println!("Existing countries: {existing_countries:?}");
-
-    for country in countries {
-        println!("Adding country: {country}");
-
-        // Check if country already exists
-        if existing_countries.contains(&country) {
-            println!("Country '{country}' already exists - skipping.");
-            continue;
-        }
-
-        // Country doesn't exist, so add it
-        let data = serde_json::json!({"name": country});
-        let res = client.post(&url).json(&data).send().await?;
-        if res.status().is_success() {
-            println!("Added country:  {country}");
-        } else {
-            println!("Error adding country: {country}");
-        }
-    }
-
-    let existing_countries = client.get(&url).send().await?;
-    let existing_countries: Vec<Country> = existing_countries.json().await?;
-    Ok(existing_countries)
-}
-
 #[tokio::main]
 async fn main() {
-    let mut mpdb: MPDB = MPDB::new();
+    let mut mpdb: Mpdb = Mpdb::new();
     let file = std::fs::read_to_string("master_subset.xml").unwrap();
-    let master = Setlists::from_xml(&file).unwrap();
+    mpdb.master = Setlists::from_xml(&file).unwrap();
 
     // setlists_to_db(master)?;
 
-    let result = add_all_countries(&master).await;
+    let result = mpdb.add_all_countries().await;
     match result {
         Ok(c) => {
             println!("Added all countries");
