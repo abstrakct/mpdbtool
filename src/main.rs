@@ -1,12 +1,14 @@
 use mpdblib::*;
 use std::collections::HashSet;
+// use std::io::Result;
 
 mod tests;
 
 // Possible flow:
 // Make vector of all unique counties, add each
 // same with cities etc
-//
+
+const MPDB_BASE_URL: &str = "http://localhost:5150";
 
 #[allow(dead_code)]
 fn get_all_countries(master: &Setlists) -> HashSet<String> {
@@ -26,7 +28,8 @@ fn get_all_cities(master: &Setlists) -> HashSet<String> {
         .collect()
 }
 
-fn setlists_to_db(master: Setlists) -> std::io::Result<()> {
+#[allow(dead_code)]
+fn setlists_to_db(master: Setlists) -> reqwest::Result<()> {
     let setlist = master.data[3].clone();
     let x = serde_json::to_string(&setlist).unwrap();
     println!("{}", x);
@@ -39,13 +42,54 @@ fn setlists_to_db(master: Setlists) -> std::io::Result<()> {
     Ok(())
 }
 
-fn main() -> std::io::Result<()> {
-    let file = std::fs::read_to_string("master_subset.xml")?;
-    let master = Setlists::from_xml(&file).unwrap();
+async fn add_all_countries(master: &Setlists) -> reqwest::Result<()> {
+    let countries = get_all_countries(master);
+    let client = reqwest::Client::new();
+    let url = format!("{}/api/countries", MPDB_BASE_URL);
 
-    setlists_to_db(master)?;
+    let existing_countries = client.get(&url).send().await?;
+    let existing_countries: Vec<Country> = existing_countries.json().await?;
+    let existing_countries: HashSet<String> =
+        existing_countries.iter().map(|c| c.name.clone()).collect();
+
+    // println!("Existing countries: {existing_countries:?}");
+
+    for country in countries {
+        // Check if country already exists
+        if existing_countries.contains(&country) {
+            println!("Country already exists: {country}");
+            continue;
+        }
+
+        println!("Adding country: {country}");
+        let data = serde_json::json!({"name": country});
+        let res = client.post(&url).json(&data).send().await?;
+        if res.status().is_success() {
+            println!("Added country:  {country}");
+        } else {
+            println!("Error adding country: {country}");
+        }
+        // println!("Response: {:?}", res.text().await?);
+        // println!("Response: {:?}", res);
+    }
 
     Ok(())
+}
+
+#[tokio::main]
+async fn main() {
+    let file = std::fs::read_to_string("master_subset.xml").unwrap();
+    let master = Setlists::from_xml(&file).unwrap();
+
+    // setlists_to_db(master)?;
+
+    let result = add_all_countries(&master).await;
+    match result {
+        Ok(_) => println!("Added all countries"),
+        Err(e) => println!("Error adding countries: {e}"),
+    }
+
+    // Ok(())
 }
 
 #[allow(dead_code)]
