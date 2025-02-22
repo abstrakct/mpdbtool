@@ -1,4 +1,5 @@
 use mpdblib::*;
+use reqwest::get;
 use serde::Deserialize;
 use std::collections::HashSet;
 // use std::io::Result;
@@ -12,9 +13,16 @@ struct Country {
 }
 
 #[derive(Deserialize, Debug)]
+struct City {
+    name: String,
+    country_id: i32,
+}
+
+#[derive(Deserialize, Debug)]
 struct Mpdb {
     master: Setlists,
     countries: Vec<Country>,
+    cities: Vec<City>,
 }
 
 impl Mpdb {
@@ -22,6 +30,7 @@ impl Mpdb {
         Mpdb {
             master: Setlists::new(),
             countries: vec![],
+            cities: vec![],
         }
     }
 
@@ -67,6 +76,49 @@ impl Mpdb {
         let existing_countries: Vec<Country> = existing_countries.json().await?;
         Ok(existing_countries)
     }
+
+    pub async fn add_all_cities(&self) -> reqwest::Result<Vec<City>> {
+        let cities = get_all_cities(&self.master);
+        let client = reqwest::Client::new();
+        let url = format!("{}/api/cities", MPDB_BASE_URL);
+
+        let existing_cities = client.get(&url).send().await?;
+        let existing_cities: Vec<City> = existing_cities.json().await?;
+        let existing_cities: HashSet<(String, i32)> = existing_cities
+            .iter()
+            .map(|c| (c.name.clone(), c.country_id))
+            .collect();
+
+        println!("Existing cities: {existing_cities:?}");
+
+        for city in cities {
+            println!("Adding city: {} in country: {}", city.0, city.1);
+
+            if let Some(country_id) = self.get_country_id(&city.1) {
+                // Check if city already exists
+                if existing_cities.contains(&(city.0.clone(), country_id)) {
+                    println!(
+                        "City '{}' in country '{}' already exists - skipping.",
+                        city.0, city.1
+                    );
+                    continue;
+                }
+
+                // City doesn't exist, so add it
+                let data = serde_json::json!({"name": city.0, "country_id": country_id});
+                let res = client.post(&url).json(&data).send().await?;
+                if res.status().is_success() {
+                    println!("Added city: {} in country: {}", city.0, city.1);
+                } else {
+                    println!("Error adding city: {} in country: {}", city.0, city.1);
+                }
+            }
+        }
+
+        let existing_cities = client.get(&url).send().await?;
+        let existing_cities: Vec<City> = existing_cities.json().await?;
+        Ok(existing_cities)
+    }
 }
 
 const MPDB_BASE_URL: &str = "http://localhost:5150";
@@ -81,11 +133,11 @@ fn extract_all_country_names(master: &Setlists) -> HashSet<String> {
 }
 
 #[allow(dead_code)]
-fn get_all_cities(master: &Setlists) -> HashSet<String> {
+fn get_all_cities(master: &Setlists) -> HashSet<(String, String)> {
     master
         .data
         .iter()
-        .map(|s| s.venue.city.name.clone())
+        .map(|s| (s.venue.city.name.clone(), s.venue.city.country.name.clone()))
         .collect()
 }
 
@@ -119,6 +171,16 @@ async fn main() {
             println!("{:?}", mpdb.countries);
         }
         Err(e) => println!("Error adding countries: {e}"),
+    }
+
+    let result = mpdb.add_all_cities().await;
+    match result {
+        Ok(c) => {
+            println!("Added all cities");
+            mpdb.cities = c;
+            println!("{:?}", mpdb.cities);
+        }
+        Err(e) => println!("Error adding cities: {e}"),
     }
 
     // Ok(())
