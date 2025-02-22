@@ -68,13 +68,15 @@ async fn add_all_countries(master: &Setlists) -> reqwest::Result<Vec<Country>> {
     // println!("Existing countries: {existing_countries:?}");
 
     for country in countries {
+        println!("Adding country: {country}");
+
         // Check if country already exists
         if existing_countries.contains(&country) {
-            println!("Country already exists: {country}");
+            println!("Country '{country}' already exists - skipping.");
             continue;
         }
 
-        println!("Adding country: {country}");
+        // Country doesn't exist, so add it
         let data = serde_json::json!({"name": country});
         let res = client.post(&url).json(&data).send().await?;
         if res.status().is_success() {
@@ -82,8 +84,6 @@ async fn add_all_countries(master: &Setlists) -> reqwest::Result<Vec<Country>> {
         } else {
             println!("Error adding country: {country}");
         }
-        // println!("Response: {:?}", res.text().await?);
-        // println!("Response: {:?}", res);
     }
 
     let existing_countries = client.get(&url).send().await?;
