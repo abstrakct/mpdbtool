@@ -1,12 +1,25 @@
 use mpdblib::*;
+use serde::Deserialize;
 use std::collections::HashSet;
 // use std::io::Result;
 
 mod tests;
 
-// Possible flow:
-// Make vector of all unique counties, add each
-// same with cities etc
+#[derive(Deserialize)]
+struct Country {
+    name: String,
+    id: i32,
+}
+
+struct MPDB {
+    countries: Vec<Country>,
+}
+
+impl MPDB {
+    fn new() -> MPDB {
+        MPDB { countries: vec![] }
+    }
+}
 
 const MPDB_BASE_URL: &str = "http://localhost:5150";
 
@@ -42,7 +55,7 @@ fn setlists_to_db(master: Setlists) -> reqwest::Result<()> {
     Ok(())
 }
 
-async fn add_all_countries(master: &Setlists) -> reqwest::Result<()> {
+async fn add_all_countries(master: &Setlists) -> reqwest::Result<Vec<Country>> {
     let countries = get_all_countries(master);
     let client = reqwest::Client::new();
     let url = format!("{}/api/countries", MPDB_BASE_URL);
@@ -73,11 +86,14 @@ async fn add_all_countries(master: &Setlists) -> reqwest::Result<()> {
         // println!("Response: {:?}", res);
     }
 
-    Ok(())
+    let existing_countries = client.get(&url).send().await?;
+    let existing_countries: Vec<Country> = existing_countries.json().await?;
+    Ok(existing_countries)
 }
 
 #[tokio::main]
 async fn main() {
+    let mut mpdb: MPDB = MPDB::new();
     let file = std::fs::read_to_string("master_subset.xml").unwrap();
     let master = Setlists::from_xml(&file).unwrap();
 
@@ -85,7 +101,10 @@ async fn main() {
 
     let result = add_all_countries(&master).await;
     match result {
-        Ok(_) => println!("Added all countries"),
+        Ok(c) => {
+            println!("Added all countries");
+            mpdb.countries = c;
+        }
         Err(e) => println!("Error adding countries: {e}"),
     }
 
