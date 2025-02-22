@@ -33,7 +33,7 @@ impl Mpdb {
     }
 
     pub async fn add_all_countries(&self) -> reqwest::Result<Vec<Country>> {
-        let countries = get_all_countries(&self.master);
+        let countries = extract_all_country_names(&self.master);
         let client = reqwest::Client::new();
         let url = format!("{}/api/countries", MPDB_BASE_URL);
 
@@ -72,7 +72,7 @@ impl Mpdb {
 const MPDB_BASE_URL: &str = "http://localhost:5150";
 
 #[allow(dead_code)]
-fn get_all_countries(master: &Setlists) -> HashSet<String> {
+fn extract_all_country_names(master: &Setlists) -> HashSet<String> {
     master
         .data
         .iter()
