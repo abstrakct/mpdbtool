@@ -126,12 +126,15 @@ impl Mpdb {
             }
 
             // Country doesn't exist, so add it
-            let data = serde_json::json!({"name": country});
+            let data = serde_json::json!({
+                "name": country,
+                "slug": country.slug()
+            });
             let res = client.post(&url).json(&data).send().await?;
             if res.status().is_success() {
-                println!("Added country:  {country}");
+                println!("Added country:  {country} (slug {})", country.slug());
             } else {
-                println!("Error adding country: {country}");
+                println!("Error adding country: {country} (slug {})", country.slug());
             }
         }
 
