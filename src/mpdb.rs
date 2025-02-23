@@ -172,7 +172,12 @@ impl Mpdb {
                 }
 
                 // City doesn't exist, so add it
-                let data = serde_json::json!({"name": city.0, "country_id": country_id});
+                let slug = format!("{}-{}", city.0.slug(), city.1.slug());
+                let data = serde_json::json!({
+                    "name": city.0,
+                    "country_id": country_id,
+                    "slug": slug
+                });
                 let res = client.post(&url).json(&data).send().await?;
                 if res.status().is_success() {
                     println!("Added city: {} in country: {}", city.0, city.1);
