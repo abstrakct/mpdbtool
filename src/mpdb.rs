@@ -61,24 +61,18 @@ impl Mpdb {
     }
 
     fn get_all_artists(&self) -> HashSet<String> {
-        let mut result: HashSet<String> = self
-            .master
+        self.master
             .data
             .iter()
             .map(|s| s.artist.name.clone())
-            .collect();
-
-        for setlist in self.master.data.iter() {
-            for set in setlist.sets.set.iter() {
-                for song in set.songs.iter() {
-                    if song.original_artist.is_some() {
-                        result.insert(song.original_artist.clone().unwrap().name.clone());
-                    }
-                }
-            }
-        }
-
-        result
+            .chain(self.master.data.iter().flat_map(|s| {
+                s.sets.set.iter().flat_map(|set| {
+                    set.songs
+                        .iter()
+                        .filter_map(|song| song.original_artist.as_ref().map(|a| a.name.clone()))
+                })
+            }))
+            .collect()
     }
 
     fn get_all_cities(&self) -> HashSet<(String, String)> {
