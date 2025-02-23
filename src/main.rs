@@ -70,10 +70,12 @@ impl Mpdb {
             .map(|c| c.id)
     }
 
-    fn get_city_id(&self, city_name: &str) -> Option<i32> {
+    fn get_city_id(&self, city_name: &str, country_name: &str) -> Option<i32> {
         self.cities
             .iter()
-            .find(|c| c.name == city_name)
+            .find(|c| {
+                c.name == city_name && c.country_id == self.get_country_id(country_name).unwrap()
+            })
             .map(|c| c.id)
     }
 
@@ -133,6 +135,7 @@ impl Mpdb {
             if let Some(country_id) = self.get_country_id(&city.1) {
                 // Check if city already exists
                 if existing_cities.contains(&(city.0.clone(), country_id)) {
+                    // TODO: send update request instead of skipping?
                     println!(
                         "City '{}' in country '{}' already exists - skipping.",
                         city.0, city.1
@@ -171,9 +174,12 @@ impl Mpdb {
         println!("Existing venues: {existing_venues:?}");
 
         for venue in venues {
-            println!("Adding venue: {} in city: {}", venue.0, venue.1);
+            println!(
+                "Adding venue: {} in city: {} in country: {}",
+                venue.0, venue.1, venue.2
+            );
 
-            if let Some(city_id) = self.get_city_id(&venue.1) {
+            if let Some(city_id) = self.get_city_id(&venue.1, &venue.2) {
                 // Check if venue already exists
                 if existing_venues.contains(&(venue.0.clone(), city_id)) {
                     println!(
@@ -230,11 +236,17 @@ fn get_all_cities(master: &Setlists) -> HashSet<(String, String)> {
 }
 
 #[allow(dead_code)]
-fn get_all_venues(master: &Setlists) -> HashSet<(String, String)> {
+fn get_all_venues(master: &Setlists) -> HashSet<(String, String, String)> {
     master
         .data
         .iter()
-        .map(|s| (s.venue.name.clone(), s.venue.city.name.clone()))
+        .map(|s| {
+            (
+                s.venue.name.clone(),
+                s.venue.city.name.clone(),
+                s.venue.city.country.name.clone(),
+            )
+        })
         .collect()
 }
 
