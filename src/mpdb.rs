@@ -25,12 +25,19 @@ pub struct Venue {
 }
 
 #[derive(Deserialize, Debug)]
+pub struct Artist {
+    id: i32,
+    name: String,
+}
+
+#[derive(Deserialize, Debug)]
 pub struct Mpdb {
     base_url: String,
     pub master: Setlists,
     pub countries: Vec<Country>,
     pub cities: Vec<City>,
     pub venues: Vec<Venue>,
+    pub artists: Vec<Artist>,
 }
 
 impl Mpdb {
@@ -41,6 +48,7 @@ impl Mpdb {
             countries: vec![],
             cities: vec![],
             venues: vec![],
+            artists: vec![],
         }
     }
 
@@ -50,6 +58,27 @@ impl Mpdb {
             .iter()
             .map(|s| s.venue.city.country.name.clone())
             .collect()
+    }
+
+    fn get_all_artists(&self) -> HashSet<String> {
+        let mut result: HashSet<String> = self
+            .master
+            .data
+            .iter()
+            .map(|s| s.artist.name.clone())
+            .collect();
+
+        for setlist in self.master.data.iter() {
+            for set in setlist.sets.set.iter() {
+                for song in set.songs.iter() {
+                    if song.original_artist.is_some() {
+                        result.insert(song.original_artist.clone().unwrap().name.clone());
+                    }
+                }
+            }
+        }
+
+        result
     }
 
     fn get_all_cities(&self) -> HashSet<(String, String)> {
@@ -101,6 +130,13 @@ impl Mpdb {
             .find(|c| {
                 c.name == city_name && c.country_id == self.get_country_id(country_name).unwrap()
             })
+            .map(|c| c.id)
+    }
+
+    fn get_artist_id(&self, artist_name: &str) -> Option<i32> {
+        self.artists
+            .iter()
+            .find(|c| c.name == artist_name)
             .map(|c| c.id)
     }
 
@@ -247,5 +283,13 @@ impl Mpdb {
         let existing_venues = client.get(&url).send().await?;
         let existing_venues: Vec<Venue> = existing_venues.json().await?;
         Ok(existing_venues)
+    }
+
+    pub async fn add_all_artists(&self) -> reqwest::Result<Vec<Artist>> {
+        let artists = self.get_all_artists();
+
+        println!("Adding artists: {artists:?}");
+
+        Ok(Vec::new())
     }
 }

@@ -56,6 +56,16 @@ async fn main() -> Result<(), config::ConfigError> {
         Err(e) => println!("Error adding venues: {e}"),
     }
 
+    let result = mpdb.add_all_artists().await;
+    match result {
+        Ok(c) => {
+            println!("Added all artists");
+            mpdb.artists = c;
+            println!("{:?}", mpdb.artists);
+        }
+        Err(e) => println!("Error adding artists: {e}"),
+    }
+
     Ok(())
 }
 
