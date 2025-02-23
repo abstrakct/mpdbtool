@@ -27,14 +27,22 @@ impl Slug for String {
 
 #[derive(Deserialize, Debug)]
 struct Country {
-    name: String,
     id: i32,
+    name: String,
 }
 
 #[derive(Deserialize, Debug)]
 struct City {
+    id: i32,
     name: String,
     country_id: i32,
+}
+
+#[derive(Deserialize, Debug)]
+struct Venue {
+    id: i32,
+    name: String,
+    city_id: i32,
 }
 
 #[derive(Deserialize, Debug)]
@@ -42,6 +50,7 @@ struct Mpdb {
     master: Setlists,
     countries: Vec<Country>,
     cities: Vec<City>,
+    venues: Vec<Venue>,
 }
 
 impl Mpdb {
@@ -50,6 +59,7 @@ impl Mpdb {
             master: Setlists::new(),
             countries: vec![],
             cities: vec![],
+            venues: vec![],
         }
     }
 
@@ -57,6 +67,13 @@ impl Mpdb {
         self.countries
             .iter()
             .find(|c| c.name == country_name)
+            .map(|c| c.id)
+    }
+
+    fn get_city_id(&self, city_name: &str) -> Option<i32> {
+        self.cities
+            .iter()
+            .find(|c| c.name == city_name)
             .map(|c| c.id)
     }
 
@@ -138,6 +155,58 @@ impl Mpdb {
         let existing_cities: Vec<City> = existing_cities.json().await?;
         Ok(existing_cities)
     }
+
+    pub async fn add_all_venues(&self) -> reqwest::Result<Vec<Venue>> {
+        let venues = get_all_venues(&self.master);
+        let client = reqwest::Client::new();
+        let url = format!("{}/api/venues", MPDB_BASE_URL);
+
+        let existing_venues = client.get(&url).send().await?;
+        let existing_venues: Vec<Venue> = existing_venues.json().await?;
+        let existing_venues: HashSet<(String, i32)> = existing_venues
+            .iter()
+            .map(|c| (c.name.clone(), c.city_id))
+            .collect();
+
+        println!("Existing venues: {existing_venues:?}");
+
+        for venue in venues {
+            println!("Adding venue: {} in city: {}", venue.0, venue.1);
+
+            if let Some(city_id) = self.get_city_id(&venue.1) {
+                // Check if venue already exists
+                if existing_venues.contains(&(venue.0.clone(), city_id)) {
+                    println!(
+                        "venue '{}' in city '{}' already exists - skipping.",
+                        venue.0, venue.1
+                    );
+                    continue;
+                }
+
+                // venue doesn't exist, so add it
+                let unique_name = format!("{}-{}", venue.0.slug(), venue.1.slug());
+                let data = serde_json::json!({
+                    "name": venue.0,
+                    "city_id": city_id,
+                    "unique_name": unique_name
+                });
+                let res = client.post(&url).json(&data).send().await?;
+
+                if res.status().is_success() {
+                    println!("Added venue: {} in city: {}", venue.0, venue.1);
+                } else {
+                    println!(
+                        "Error adding venue: {} in city: {} - city id {city_id}",
+                        venue.0, venue.1
+                    );
+                }
+            }
+        }
+
+        let existing_venues = client.get(&url).send().await?;
+        let existing_venues: Vec<Venue> = existing_venues.json().await?;
+        Ok(existing_venues)
+    }
 }
 
 const MPDB_BASE_URL: &str = "http://localhost:5150";
@@ -157,6 +226,15 @@ fn get_all_cities(master: &Setlists) -> HashSet<(String, String)> {
         .data
         .iter()
         .map(|s| (s.venue.city.name.clone(), s.venue.city.country.name.clone()))
+        .collect()
+}
+
+#[allow(dead_code)]
+fn get_all_venues(master: &Setlists) -> HashSet<(String, String)> {
+    master
+        .data
+        .iter()
+        .map(|s| (s.venue.name.clone(), s.venue.city.name.clone()))
         .collect()
 }
 
@@ -200,6 +278,16 @@ async fn main() {
             println!("{:?}", mpdb.cities);
         }
         Err(e) => println!("Error adding cities: {e}"),
+    }
+
+    let result = mpdb.add_all_venues().await;
+    match result {
+        Ok(c) => {
+            println!("Added all venues");
+            mpdb.venues = c;
+            println!("{:?}", mpdb.venues);
+        }
+        Err(e) => println!("Error adding venues: {e}"),
     }
 
     // Ok(())
