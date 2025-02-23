@@ -224,10 +224,12 @@ impl Mpdb {
 
                 // venue doesn't exist, so add it
                 let unique_name = format!("{}-{}", venue.0.slug(), venue.1.slug());
+                let slug = format!("{}-{}-{}", venue.0.slug(), venue.1.slug(), venue.2.slug());
                 let data = serde_json::json!({
                     "name": venue.0,
                     "city_id": city_id,
-                    "unique_name": unique_name
+                    "unique_name": unique_name,
+                    "slug": slug
                 });
                 let res = client.post(&url).json(&data).send().await?;
 
