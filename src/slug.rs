@@ -3,16 +3,19 @@ pub trait Slug {
 }
 
 impl Slug for String {
-    /// Converts the string to lowercase, replaces all non-ASCII characters with
-    /// hyphens, replaces all spaces with hyphens, and trims leading and trailing
-    /// whitespace. Returns the modified string.
+    /// Returns a slug for the string.
+    ///
+    /// The slug is created by
+    ///
+    /// 1. Replacing some special characters with a-z
+    /// 2. Lowercasing the string
+    /// 3. Replacing all non-alphanumeric characters with a hyphen
+    /// 4. Replacing all spaces with a hyphen
+    /// 5. Trimming any leading or trailing hyphens
     fn slug(&self) -> String {
-        // convert to lowercase
-        // replace all non-ascii characters with a hyphen
-        // replace all spaces with a hyphen
-        // trim leading and trailing whitespace
-        self.to_lowercase()
-            .replace(|c: char| !c.is_ascii(), "-")
+        self.replace("Ü", "u")
+            .to_lowercase()
+            .replace(|c: char| !c.is_alphanumeric(), "-")
             .replace(" ", "-")
             .trim_ascii()
             .to_string()
