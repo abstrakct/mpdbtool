@@ -1,3 +1,4 @@
+use config::Config;
 use mpdblib::*;
 
 mod slug;
@@ -7,11 +8,19 @@ mod mpdb;
 pub use mpdb::*;
 
 mod tests;
-const MPDB_BASE_URL: &str = "http://localhost:5150";
+
+const CONFIG_FILE: &str = "mpdbtoolconfig.toml";
 
 #[tokio::main]
-async fn main() {
-    let mut mpdb: Mpdb = Mpdb::new(MPDB_BASE_URL.to_string());
+async fn main() -> Result<(), config::ConfigError> {
+    // Parse config
+    let settings = Config::builder()
+        .add_source(config::File::with_name(CONFIG_FILE))
+        .build()?;
+
+    let mpdb_base_url = settings.get_string("mpdb_base_url")?;
+
+    let mut mpdb: Mpdb = Mpdb::new(mpdb_base_url);
     let file = std::fs::read_to_string("master_subset.xml").unwrap();
     mpdb.master = Setlists::from_xml(&file).unwrap();
 
@@ -47,7 +56,7 @@ async fn main() {
         Err(e) => println!("Error adding venues: {e}"),
     }
 
-    // Ok(())
+    Ok(())
 }
 
 #[allow(dead_code)]
