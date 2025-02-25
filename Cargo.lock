@@ -772,9 +772,9 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.169"
+version = "0.2.170"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b5aba8db14291edd000dfcc4d620c7ebfb122c613afb886ca8803fa4e128a20a"
+checksum = "875b3680cb2f8f71bdcf9a30f38d48282f5d3c95cbf9b3fa57269bb5d5c06828"
 
 [[package]]
 name = "linux-raw-sys"
@@ -839,7 +839,7 @@ dependencies = [
 [[package]]
 name = "mpdblib"
 version = "0.1.0"
-source = "git+http://git.darkstar.local/rolf/mpdblib.git#c1dc60598c4eee40b97cff8be10af367aa18388b"
+source = "git+http://git.darkstar.local/rolf/mpdblib.git#61dc1e3390f7e3089c00e7b580cba638674d8b0a"
 dependencies = [
  "serde",
  "serde-xml-rust",
