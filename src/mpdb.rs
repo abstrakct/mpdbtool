@@ -281,8 +281,38 @@ impl Mpdb {
 
     pub async fn add_all_artists(&self) -> reqwest::Result<Vec<Artist>> {
         let artists = self.get_all_artists();
+        let client = reqwest::Client::new();
+        let url = format!("{}/api/artists", self.base_url);
 
-        println!("Adding artists: {artists:?}");
+        let existing_artists = client.get(&url).send().await?;
+        let existing_artists: Vec<Artist> = existing_artists.json().await?;
+        let existing_artists: HashSet<String> =
+            existing_artists.iter().map(|a| a.name.clone()).collect();
+
+        println!("Existing artists: {existing_artists:?}");
+
+        for artist in artists {
+            println!("Adding artist: {}", artist);
+
+            // Check if artist already exists
+            if existing_artists.contains(&artist) {
+                println!("artist '{}' already exists - skipping.", artist);
+                continue;
+            }
+
+            // artist doesn't exist, so add it
+            let slug = artist.slug();
+            let data = serde_json::json!({
+                "name": artist,
+                "slug": slug
+            });
+            let res = client.post(&url).json(&data).send().await?;
+            if res.status().is_success() {
+                println!("Added artist: {}", artist);
+            } else {
+                println!("Error adding artist: {}", artist);
+            }
+        }
 
         Ok(Vec::new())
     }
