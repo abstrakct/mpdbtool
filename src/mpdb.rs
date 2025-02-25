@@ -1,3 +1,4 @@
+use log::{debug, error, info};
 use mpdblib::*;
 use serde::Deserialize;
 use std::collections::HashSet;
@@ -147,11 +148,11 @@ impl Mpdb {
         // println!("Existing countries: {existing_countries:?}");
 
         for country in countries {
-            println!("Adding country: {country}");
+            info!("[ADD?] {country}");
 
             // Check if country already exists
             if existing_countries.contains(&country) {
-                println!("Country '{country}' already exists - skipping.");
+                info!("[NOPE] {country} already exists.");
                 continue;
             }
 
@@ -162,9 +163,9 @@ impl Mpdb {
             });
             let res = client.post(&url).json(&data).send().await?;
             if res.status().is_success() {
-                println!("Added country:  {country} (slug {})", country.slug());
+                info!("[YAY!] {country} added (slug {})", country.slug());
             } else {
-                println!("Error adding country: {country} (slug {})", country.slug());
+                error!("[FAIL] adding country {country} (slug {})", country.slug());
             }
         }
 
@@ -185,17 +186,17 @@ impl Mpdb {
             .map(|c| (c.name.clone(), c.country_id))
             .collect();
 
-        println!("Existing cities: {existing_cities:?}");
+        // println!("Existing cities: {existing_cities:?}");
 
         for city in cities {
-            println!("Adding city: {} in country: {}", city.0, city.1);
+            info!("[ADD?] city {} in country {}", city.0, city.1);
 
             if let Some(country_id) = self.get_country_id(&city.1) {
                 // Check if city already exists
                 if existing_cities.contains(&(city.0.clone(), country_id)) {
                     // TODO: send update request instead of skipping?
-                    println!(
-                        "City '{}' in country '{}' already exists - skipping.",
+                    info!(
+                        "[NOPE] city {} in country {} already exists.",
                         city.0, city.1
                     );
                     continue;
@@ -210,9 +211,9 @@ impl Mpdb {
                 });
                 let res = client.post(&url).json(&data).send().await?;
                 if res.status().is_success() {
-                    println!("Added city: {} in country: {}", city.0, city.1);
+                    info!("[YAY!] city {} in country {} added.", city.0, city.1);
                 } else {
-                    println!("Error adding city: {} in country: {}", city.0, city.1);
+                    error!("Error adding city: {} in country: {}", city.0, city.1);
                 }
             }
         }
@@ -234,20 +235,20 @@ impl Mpdb {
             .map(|c| (c.name.clone(), c.city_id))
             .collect();
 
-        println!("Existing venues: {existing_venues:?}");
+        // println!("Existing venues: {existing_venues:?}");
 
         for venue in venues {
-            println!(
-                "Adding venue: {} in city: {} in country: {}",
+            info!(
+                "[ADD?] venue {} in city {} in country {}",
                 venue.0, venue.1, venue.2
             );
 
             if let Some(city_id) = self.get_city_id(&venue.1, &venue.2) {
                 // Check if venue already exists
                 if existing_venues.contains(&(venue.0.clone(), city_id)) {
-                    println!(
-                        "venue '{}' in city '{}' already exists - skipping.",
-                        venue.0, venue.1
+                    info!(
+                        "[NOPE] venue {} in city {} in country {} already exists.",
+                        venue.0, venue.1, venue.2
                     );
                     continue;
                 }
@@ -264,11 +265,14 @@ impl Mpdb {
                 let res = client.post(&url).json(&data).send().await?;
 
                 if res.status().is_success() {
-                    println!("Added venue: {} in city: {}", venue.0, venue.1);
+                    info!(
+                        "[YAY!] venue {} in city {} in country {} added (slug {})",
+                        venue.0, venue.1, venue.2, slug
+                    );
                 } else {
-                    println!(
-                        "Error adding venue: {} in city: {} - city id {city_id}",
-                        venue.0, venue.1
+                    error!(
+                        "[FAIL] adding venue {} in city {} - city id {city_id} - in country {}",
+                        venue.0, venue.1, venue.2
                     );
                 }
             }
@@ -289,14 +293,14 @@ impl Mpdb {
         let existing_artists: HashSet<String> =
             existing_artists.iter().map(|a| a.name.clone()).collect();
 
-        println!("Existing artists: {existing_artists:?}");
+        // println!("Existing artists: {existing_artists:?}");
 
         for artist in artists {
-            println!("Adding artist: {}", artist);
+            info!("[ADD?] artist {}", artist);
 
             // Check if artist already exists
             if existing_artists.contains(&artist) {
-                println!("artist '{}' already exists - skipping.", artist);
+                info!("[NOPE] artist {} already exists.", artist);
                 continue;
             }
 
@@ -308,9 +312,9 @@ impl Mpdb {
             });
             let res = client.post(&url).json(&data).send().await?;
             if res.status().is_success() {
-                println!("Added artist: {}", artist);
+                info!("[YAY!] artist {} added", artist);
             } else {
-                println!("Error adding artist: {}", artist);
+                error!("[FAIL] Error adding artist: {}", artist);
             }
         }
 

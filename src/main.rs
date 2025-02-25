@@ -1,4 +1,5 @@
 use config::Config;
+use log::{debug, error, info};
 use mpdblib::*;
 
 mod slug;
@@ -20,6 +21,10 @@ async fn main() -> Result<(), config::ConfigError> {
 
     let mpdb_base_url = settings.get_string("mpdb_base_url")?;
 
+    // Initialize logger
+    // env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
+    pretty_env_logger::init();
+
     let mut mpdb: Mpdb = Mpdb::new(mpdb_base_url);
     let file = std::fs::read_to_string("master_subset.xml").unwrap();
     mpdb.master = Setlists::from_xml(&file).unwrap();
@@ -29,41 +34,41 @@ async fn main() -> Result<(), config::ConfigError> {
     let result = mpdb.add_all_countries().await;
     match result {
         Ok(c) => {
-            println!("Added all countries");
+            info!("Added all countries");
             mpdb.countries = c;
-            println!("{:?}", mpdb.countries);
+            debug!("{:?}", mpdb.countries);
         }
-        Err(e) => println!("Error adding countries: {e}"),
+        Err(e) => error!("Error adding countries: {e}"),
     }
 
     let result = mpdb.add_all_cities().await;
     match result {
         Ok(c) => {
-            println!("Added all cities");
+            info!("Added all cities");
             mpdb.cities = c;
-            println!("{:?}", mpdb.cities);
+            debug!("{:?}", mpdb.cities);
         }
-        Err(e) => println!("Error adding cities: {e}"),
+        Err(e) => error!("Error adding cities: {e}"),
     }
 
     let result = mpdb.add_all_venues().await;
     match result {
         Ok(c) => {
-            println!("Added all venues");
+            info!("Added all venues");
             mpdb.venues = c;
-            println!("{:?}", mpdb.venues);
+            debug!("{:?}", mpdb.venues);
         }
-        Err(e) => println!("Error adding venues: {e}"),
+        Err(e) => error!("Error adding venues: {e}"),
     }
 
     let result = mpdb.add_all_artists().await;
     match result {
         Ok(c) => {
-            println!("Added all artists");
+            info!("Added all artists");
             mpdb.artists = c;
-            println!("{:?}", mpdb.artists);
+            debug!("{:?}", mpdb.artists);
         }
-        Err(e) => println!("Error adding artists: {e}"),
+        Err(e) => error!("Error adding artists: {e}"),
     }
 
     Ok(())
