@@ -152,7 +152,7 @@ impl Mpdb {
 
             // Check if country already exists
             if existing_countries.contains(&country) {
-                info!("[NOPE] {country} already exists.");
+                info!("[SKIP] {country} already exists.");
                 continue;
             }
 
@@ -163,7 +163,7 @@ impl Mpdb {
             });
             let res = client.post(&url).json(&data).send().await?;
             if res.status().is_success() {
-                info!("[YAY!] {country} added (slug {})", country.slug());
+                info!("[SUCC] {country} added (slug {})", country.slug());
             } else {
                 error!("[FAIL] adding country {country} (slug {})", country.slug());
             }
@@ -196,7 +196,7 @@ impl Mpdb {
                 if existing_cities.contains(&(city.0.clone(), country_id)) {
                     // TODO: send update request instead of skipping?
                     info!(
-                        "[NOPE] city {} in country {} already exists.",
+                        "[SKIP] city {} in country {} already exists.",
                         city.0, city.1
                     );
                     continue;
@@ -211,7 +211,7 @@ impl Mpdb {
                 });
                 let res = client.post(&url).json(&data).send().await?;
                 if res.status().is_success() {
-                    info!("[YAY!] city {} in country {} added.", city.0, city.1);
+                    info!("[SUCC] city {} in country {} added.", city.0, city.1);
                 } else {
                     error!("Error adding city: {} in country: {}", city.0, city.1);
                 }
@@ -247,7 +247,7 @@ impl Mpdb {
                 // Check if venue already exists
                 if existing_venues.contains(&(venue.0.clone(), city_id)) {
                     info!(
-                        "[NOPE] venue {} in city {} in country {} already exists.",
+                        "[SKIP] venue {} in city {} in country {} already exists.",
                         venue.0, venue.1, venue.2
                     );
                     continue;
@@ -266,7 +266,7 @@ impl Mpdb {
 
                 if res.status().is_success() {
                     info!(
-                        "[YAY!] venue {} in city {} in country {} added (slug {})",
+                        "[SUCC] venue {} in city {} in country {} added (slug {})",
                         venue.0, venue.1, venue.2, slug
                     );
                 } else {
@@ -300,7 +300,7 @@ impl Mpdb {
 
             // Check if artist already exists
             if existing_artists.contains(&artist) {
-                info!("[NOPE] artist {} already exists.", artist);
+                info!("[SKIP] artist {} already exists.", artist);
                 continue;
             }
 
@@ -312,7 +312,7 @@ impl Mpdb {
             });
             let res = client.post(&url).json(&data).send().await?;
             if res.status().is_success() {
-                info!("[YAY!] artist {} added", artist);
+                info!("[SUCC] artist {} added", artist);
             } else {
                 error!("[FAIL] Error adding artist: {}", artist);
             }
