@@ -32,6 +32,13 @@ pub struct Artist {
 }
 
 #[derive(Deserialize, Debug)]
+pub struct Songtitle {
+    id: i32,
+    title: String,
+    is_default: bool,
+}
+
+#[derive(Deserialize, Debug)]
 pub struct Mpdb {
     base_url: String,
     pub master: Setlists,
@@ -94,6 +101,19 @@ impl Mpdb {
                     s.venue.city.name.clone(),
                     s.venue.city.country.name.clone(),
                 )
+            })
+            .collect()
+    }
+
+    fn extract_all_unique_songs(&self) -> HashSet<String> {
+        self.master
+            .data
+            .iter()
+            .flat_map(|s| {
+                s.sets
+                    .set
+                    .iter()
+                    .flat_map(|set| set.songs.iter().map(|song| song.name.clone()))
             })
             .collect()
     }
@@ -318,6 +338,60 @@ impl Mpdb {
             }
         }
 
+        Ok(Vec::new())
+    }
+
+    pub async fn add_all_songtitles(&self) -> reqwest::Result<Vec<Songtitle>> {
+        let songtitles = self.extract_all_unique_songs();
+        let client = reqwest::Client::new();
+        let url = format!("{}/api/songtitles", self.base_url);
+
+        let songclient = reqwest::Client::new();
+        let songurl = format!("{}/api/songs", self.base_url);
+
+        debug!("Songtitles: {songtitles:?}");
+
+        let existing_songtitles = client.get(&url).send().await?;
+        let existing_songtitles: Vec<Songtitle> = existing_songtitles.json().await?;
+        let existing_songtitles: HashSet<String> = existing_songtitles
+            .iter()
+            .map(|s| s.title.clone())
+            .collect();
+
+        for songtitle in songtitles {
+            info!("[ADD?] songtitle {}", songtitle);
+
+            // Check if songtitle already exists
+            if existing_songtitles.contains(&songtitle) {
+                info!("[SKIP] songtitle {} already exists.", songtitle);
+                continue;
+            }
+
+            // songtitle doesn't exist, so add it
+
+            // First: add a song
+            let songdata = serde_json::json!({
+                "artist_id": 1,
+            });
+            let songres = songclient.post(&songurl).json(&songdata).send().await?;
+            let song_json: serde_json::Value = songres.json().await?;
+            let song_id = song_json["id"].as_i64().unwrap_or_default();
+            info!("[SONG] Created song with ID: {}", song_id);
+
+            let slug = songtitle.slug();
+            let data = serde_json::json!({
+                "title": songtitle,
+                "slug": slug,
+                "is_default": true,
+                "song_id": song_id,
+            });
+            let res = client.post(&url).json(&data).send().await?;
+            if res.status().is_success() {
+                info!("[SUCC] songtitle {} added, slug {}", songtitle, slug);
+            } else {
+                error!("[FAIL] Error adding songtitle: {}", songtitle);
+            }
+        }
         Ok(Vec::new())
     }
 }

@@ -71,6 +71,15 @@ async fn main() -> Result<(), config::ConfigError> {
         Err(e) => error!("Error adding artists: {e}"),
     }
 
+    let result = mpdb.add_all_songtitles().await;
+    match result {
+        Ok(c) => {
+            info!("Added all songtitles");
+            // mpdb.artists = c;
+            // debug!("{:?}", mpdb.artists);
+        }
+        Err(e) => error!("Error adding songtitles: {e}"),
+    }
     Ok(())
 }
 
