@@ -53,7 +53,7 @@ impl Mpdb {
         }
     }
 
-    fn extract_all_country_names(&self) -> HashSet<String> {
+    fn extract_all_unique_country_names(&self) -> HashSet<String> {
         self.master
             .data
             .iter()
@@ -61,7 +61,7 @@ impl Mpdb {
             .collect()
     }
 
-    fn get_all_artists(&self) -> HashSet<String> {
+    fn extract_all_unique_artists(&self) -> HashSet<String> {
         self.master
             .data
             .iter()
@@ -76,7 +76,7 @@ impl Mpdb {
             .collect()
     }
 
-    fn get_all_cities(&self) -> HashSet<(String, String)> {
+    fn extract_all_unique_cities(&self) -> HashSet<(String, String)> {
         self.master
             .data
             .iter()
@@ -84,7 +84,7 @@ impl Mpdb {
             .collect()
     }
 
-    fn get_all_venues(&self) -> HashSet<(String, String, String)> {
+    fn extract_all_unique_venues(&self) -> HashSet<(String, String, String)> {
         self.master
             .data
             .iter()
@@ -136,7 +136,7 @@ impl Mpdb {
     }
 
     pub async fn add_all_countries(&self) -> reqwest::Result<Vec<Country>> {
-        let countries = self.extract_all_country_names();
+        let countries = self.extract_all_unique_country_names();
         let client = reqwest::Client::new();
         let url = format!("{}/api/countries", self.base_url);
 
@@ -175,7 +175,7 @@ impl Mpdb {
     }
 
     pub async fn add_all_cities(&self) -> reqwest::Result<Vec<City>> {
-        let cities = self.get_all_cities();
+        let cities = self.extract_all_unique_cities();
         let client = reqwest::Client::new();
         let url = format!("{}/api/cities", self.base_url);
 
@@ -224,7 +224,7 @@ impl Mpdb {
     }
 
     pub async fn add_all_venues(&self) -> reqwest::Result<Vec<Venue>> {
-        let venues = self.get_all_venues();
+        let venues = self.extract_all_unique_venues();
         let client = reqwest::Client::new();
         let url = format!("{}/api/venues", self.base_url);
 
@@ -284,7 +284,7 @@ impl Mpdb {
     }
 
     pub async fn add_all_artists(&self) -> reqwest::Result<Vec<Artist>> {
-        let artists = self.get_all_artists();
+        let artists = self.extract_all_unique_artists();
         let client = reqwest::Client::new();
         let url = format!("{}/api/artists", self.base_url);
 
