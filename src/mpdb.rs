@@ -1,9 +1,9 @@
 use log::{debug, error, info};
-use mpdblib::*;
 use serde::Deserialize;
 use std::collections::HashSet;
 
-pub use crate::slug::*;
+use crate::setlists::*;
+use crate::slug::*;
 
 #[derive(Deserialize, Debug)]
 pub struct Country {

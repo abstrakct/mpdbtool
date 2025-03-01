@@ -2,7 +2,9 @@ use std::error::Error;
 
 use config::Config;
 use log::{debug, error, info};
-use mpdblib::*;
+
+mod setlists;
+pub use setlists::*;
 
 mod slug;
 pub use slug::*;

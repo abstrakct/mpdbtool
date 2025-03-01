@@ -837,21 +837,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "mpdblib"
-version = "0.1.0"
-source = "git+http://git.darkstar.local/rolf/mpdblib.git#1481d92612092df6032b053147b18389003b847c"
-dependencies = [
- "serde",
- "serde-xml-rust",
-]
-
-[[package]]
 name = "mpdbtool"
 version = "0.1.0"
 dependencies = [
  "config",
  "log",
- "mpdblib",
  "pretty_env_logger",
  "reqwest",
  "serde",
