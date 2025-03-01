@@ -76,7 +76,9 @@ impl Mpdb {
             .chain(self.master.data.iter().flat_map(|s| {
                 s.sets.set.iter().flat_map(|set| {
                     set.songs
-                        .iter()
+                        .as_ref()
+                        .map(|songs| songs.iter())
+                        .unwrap_or_else(|| [].iter())
                         .filter_map(|song| song.original_artist.as_ref().map(|a| a.name.clone()))
                 })
             }))
@@ -110,10 +112,13 @@ impl Mpdb {
             .data
             .iter()
             .flat_map(|s| {
-                s.sets
-                    .set
-                    .iter()
-                    .flat_map(|set| set.songs.iter().map(|song| song.name.clone()))
+                s.sets.set.iter().flat_map(|set| {
+                    set.songs
+                        .as_ref()
+                        .map(|songs| songs.iter())
+                        .unwrap_or_else(|| [].iter())
+                        .map(|song| song.name.clone())
+                })
             })
             .collect()
     }
@@ -359,11 +364,15 @@ impl Mpdb {
             .collect();
 
         for songtitle in songtitles {
-            info!("[ADD?] songtitle {}", songtitle);
+            info!("[ADD?] songtitle {}, slug {}", songtitle, songtitle.slug());
 
             // Check if songtitle already exists
             if existing_songtitles.contains(&songtitle) {
-                info!("[SKIP] songtitle {} already exists.", songtitle);
+                info!(
+                    "[SKIP] songtitle {} (slug {}) already exists.",
+                    songtitle,
+                    songtitle.slug()
+                );
                 continue;
             }
 
@@ -389,7 +398,10 @@ impl Mpdb {
             if res.status().is_success() {
                 info!("[SUCC] songtitle {} added, slug {}", songtitle, slug);
             } else {
-                error!("[FAIL] Error adding songtitle: {}", songtitle);
+                error!(
+                    "[FAIL] Error adding songtitle: {}, slug {}",
+                    songtitle, slug
+                );
             }
         }
         Ok(Vec::new())

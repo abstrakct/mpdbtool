@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use config::Config;
 use log::{debug, error, info};
 use mpdblib::*;
@@ -13,7 +15,7 @@ mod tests;
 const CONFIG_FILE: &str = "mpdbtoolconfig.toml";
 
 #[tokio::main]
-async fn main() -> Result<(), config::ConfigError> {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Parse config
     let settings = Config::builder()
         .add_source(config::File::with_name(CONFIG_FILE))
@@ -27,7 +29,11 @@ async fn main() -> Result<(), config::ConfigError> {
 
     let mut mpdb: Mpdb = Mpdb::new(mpdb_base_url);
     let file = std::fs::read_to_string("master_subset.xml").unwrap();
-    mpdb.master = Setlists::from_xml(&file).unwrap();
+    // let file = std::fs::read_to_string("master.xml")?;
+    mpdb.master = Setlists::from_xml(&file).map_err(|e| {
+        error!("XML parsing error: {}", e);
+        e
+    })?;
 
     // setlists_to_db(master)?;
 
@@ -111,19 +117,21 @@ fn dump_setlists(master: Setlists) {
             if let Some(name) = set.name {
                 println!("-- Set name: {}", name);
             }
-            for song in set.songs {
-                println!("{}", song.name);
-                if song.original_artist.is_some() {
-                    println!(
-                        "-- COVER!!! Original Artist: {}",
-                        song.original_artist.unwrap().name
-                    );
-                }
-                if song.notes.is_some() {
-                    println!("Song notes: {}", song.notes.unwrap());
-                }
-                if song.segue.is_some() {
-                    println!("->");
+            if let Some(songs) = set.songs {
+                for song in songs {
+                    println!("{}", song.name);
+                    if song.original_artist.is_some() {
+                        println!(
+                            "-- COVER!!! Original Artist: {}",
+                            song.original_artist.unwrap().name
+                        );
+                    }
+                    if song.notes.is_some() {
+                        println!("Song notes: {}", song.notes.unwrap());
+                    }
+                    if song.segue.is_some() {
+                        println!("->");
+                    }
                 }
             }
         }
