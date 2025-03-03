@@ -491,12 +491,15 @@ impl Mpdb {
             // songtitle doesn't exist, so add it
 
             // add a song and get the id
-            let artist_id = if songtitle.1.is_some() {
-                self.get_artist_id(&songtitle.1.unwrap()).unwrap_or(1)
-            } else {
-                // It should be impossible that Motorpsycho doesn't exist at this point.
-                self.get_artist_id("Motorpsycho").unwrap()
-            };
+            let artist_id = songtitle
+                .1
+                .as_ref()
+                .and_then(|artist_name| self.get_artist_id(artist_name))
+                .unwrap_or_else(|| {
+                    self.get_artist_id("Motorpsycho")
+                        .expect("Artist Motorpsycho should exist!")
+                });
+
             let songdata = serde_json::json!({
                 "artist_id": artist_id,
             });
