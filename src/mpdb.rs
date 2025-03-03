@@ -119,7 +119,12 @@ impl Mpdb {
                         .as_ref()
                         .map(|songs| songs.iter())
                         .unwrap_or_else(|| [].iter())
-                        .map(|song| (song.name.clone(), song.alias_for.clone()))
+                        .map(|song| {
+                            (
+                                song.name.clone(),
+                                song.original_artist.as_ref().map(|a| a.name.clone()),
+                            )
+                        })
                 })
             })
             .collect()
@@ -156,10 +161,14 @@ impl Mpdb {
     }
 
     fn get_artist_id(&self, artist_name: &str) -> Option<i32> {
-        self.artists
+        debug!("Getting artist ID for {}", artist_name);
+        let id = self
+            .artists
             .iter()
             .find(|c| c.name == artist_name)
-            .map(|c| c.id)
+            .map(|c| c.id);
+        debug!("Artist ID: {}", id.unwrap_or(0));
+        id
     }
 
     pub async fn add_all_countries(&self) -> reqwest::Result<Vec<Country>> {
@@ -320,7 +329,20 @@ impl Mpdb {
         let existing_artists: HashSet<String> =
             existing_artists.iter().map(|a| a.name.clone()).collect();
 
-        // println!("Existing artists: {existing_artists:?}");
+        // Make sure Motorpsycho exists and is the first artist
+        let mp = "Motorpsycho";
+        if !existing_artists.contains(mp) {
+            let data = serde_json::json!({
+                "name": mp,
+                "slug": mp.to_string().slug()
+            });
+            let res = client.post(&url).json(&data).send().await?;
+            if res.status().is_success() {
+                info!("[SUCC] Motorpsycho added");
+            } else {
+                error!("[FAIL] adding Motorpsycho");
+            }
+        }
 
         for artist in artists {
             info!("[ADD?] artist {}", artist);
@@ -345,7 +367,9 @@ impl Mpdb {
             }
         }
 
-        Ok(Vec::new())
+        let existing_artists = client.get(&url).send().await?;
+        let existing_artists: Vec<Artist> = existing_artists.json().await?;
+        Ok(existing_artists)
     }
 
     pub async fn add_all_songaliases(&self) -> reqwest::Result<()> {
@@ -358,12 +382,12 @@ impl Mpdb {
 
         debug!("Adding songaliases");
 
-        let existing_songtitles = client.get(&url).send().await?;
-        let existing_songtitles: Vec<Songtitle> = existing_songtitles.json().await?;
-        let existing_songtitles: HashSet<String> = existing_songtitles
-            .iter()
-            .map(|s| s.title.clone())
-            .collect();
+        // let existing_songtitles = client.get(&url).send().await?;
+        // let existing_songtitles: Vec<Songtitle> = existing_songtitles.json().await?;
+        // let existing_songtitles: HashSet<String> = existing_songtitles
+        //     .iter()
+        //     .map(|s| s.title.clone())
+        //     .collect();
 
         for songwithaliases in self.aliases.songs.clone() {
             // Check if songtitle already exists
@@ -449,21 +473,6 @@ impl Mpdb {
             .collect();
 
         for songtitle in songtitles {
-            // if let Some(alias_for) = songtitle.1 {
-            //     info!(
-            //         "[ADD?] songtitle {}, slug {}, alias for {}",
-            //         songtitle.0,
-            //         songtitle.0.slug(),
-            //         alias_for
-            //     );
-            // } else {
-            //     info!(
-            //         "[ADD?] songtitle {}, slug {}",
-            //         songtitle.0,
-            //         songtitle.0.slug()
-            //     );
-            // }
-
             // Check if songtitle already exists
             if existing_songtitles.contains(&songtitle.0) {
                 info!(
@@ -477,13 +486,22 @@ impl Mpdb {
             // songtitle doesn't exist, so add it
 
             // add a song and get the id
+            let artist_id = if songtitle.1.is_some() {
+                self.get_artist_id(&songtitle.1.unwrap()).unwrap_or(1)
+            } else {
+                // It should be impossible that Motorpsycho doesn't exist at this point.
+                self.get_artist_id("Motorpsycho").unwrap()
+            };
             let songdata = serde_json::json!({
-                "artist_id": 1,
+                "artist_id": artist_id,
             });
             let songres = songclient.post(&songurl).json(&songdata).send().await?;
             let song_json: serde_json::Value = songres.json().await?;
             let song_id = song_json["id"].as_i64().unwrap_or_default();
-            info!("[SONG] Created song with ID: {}", song_id);
+            info!(
+                "[SONG] Created song with ID: {}, artist_id: {}",
+                song_id, artist_id
+            );
 
             // add the songtitle
             let slug = songtitle.0.slug();
