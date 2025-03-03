@@ -46,6 +46,7 @@ pub struct Mpdb {
     pub cities: Vec<City>,
     pub venues: Vec<Venue>,
     pub artists: Vec<Artist>,
+    pub songtitles: Vec<Songtitle>,
     pub aliases: SongAliases,
 }
 
@@ -59,6 +60,7 @@ impl Mpdb {
             cities: vec![],
             venues: vec![],
             artists: vec![],
+            songtitles: vec![],
         }
     }
 
@@ -518,6 +520,9 @@ impl Mpdb {
                 error!("[FAIL] adding songtitle: {}, slug {}", songtitle.0, slug);
             }
         }
-        Ok(Vec::new())
+
+        let existing_songtitles = client.get(&url).send().await?;
+        let existing_songtitles: Vec<Songtitle> = existing_songtitles.json().await?;
+        Ok(existing_songtitles)
     }
 }

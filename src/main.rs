@@ -93,8 +93,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match result {
         Ok(c) => {
             info!("Added all songtitles");
-            // mpdb.artists = c;
-            // debug!("{:?}", mpdb.artists);
+            mpdb.songtitles = c;
+            debug!("{:?}", mpdb.songtitles);
         }
         Err(e) => error!("Error adding songtitles: {e}"),
     }
