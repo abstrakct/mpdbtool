@@ -1,16 +1,12 @@
-use std::error::Error;
-
 use config::Config;
 use log::{debug, error, info};
 
-mod setlists;
-pub use setlists::*;
-
-mod slug;
-pub use slug::*;
-
 mod mpdb;
-pub use mpdb::*;
+mod setlists;
+mod slug;
+
+use mpdb::Mpdb;
+use setlists::{Setlists, SongAliases};
 
 mod tests;
 
