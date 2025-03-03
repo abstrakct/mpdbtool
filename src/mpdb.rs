@@ -424,13 +424,13 @@ impl Mpdb {
             let res = client.post(&url).json(&data).send().await?;
             if res.status().is_success() {
                 info!(
-                    "[SUCC] songtitle {} added, slug {}",
-                    songwithaliases.name, slug
+                    "[SUCC] songtitle {} added, slug {}, song_id {}",
+                    songwithaliases.name, slug, song_id
                 );
             } else {
                 error!(
-                    "[FAIL] adding songtitle: {}, slug {}",
-                    songwithaliases.name, slug
+                    "[FAIL] adding songtitle: {}, slug {}, song_id {}",
+                    songwithaliases.name, slug, song_id
                 );
             }
 
@@ -445,11 +445,14 @@ impl Mpdb {
                 });
                 let res = client.post(&url).json(&data).send().await?;
                 if res.status().is_success() {
-                    info!("[SUCC] alias songtitle {} added, slug {}", alias.name, slug);
+                    info!(
+                        "[SUCC] alias songtitle {} added, slug {}, song_id {}",
+                        alias.name, slug, song_id
+                    );
                 } else {
                     error!(
-                        "[FAIL] adding alias songtitle: {}, slug {}",
-                        alias.name, slug
+                        "[FAIL] adding alias songtitle: {}, slug {}, song_id {}",
+                        alias.name, slug, song_id
                     );
                 }
             }
@@ -515,9 +518,15 @@ impl Mpdb {
             });
             let res = client.post(&url).json(&data).send().await?;
             if res.status().is_success() {
-                info!("[SUCC] songtitle {} added, slug {}", songtitle.0, slug);
+                info!(
+                    "[SUCC] songtitle {} added, slug {}, song_id {}",
+                    songtitle.0, slug, song_id
+                );
             } else {
-                error!("[FAIL] adding songtitle: {}, slug {}", songtitle.0, slug);
+                error!(
+                    "[FAIL] adding songtitle: {}, slug {}, song_id {}",
+                    songtitle.0, slug, song_id
+                );
             }
         }
 
