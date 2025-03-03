@@ -1,5 +1,52 @@
 use serde::{Deserialize, Serialize};
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct SongAliases {
+    #[serde(rename = "song")]
+    pub songs: Vec<SongWithAliases>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct SongWithAliases {
+    #[serde(rename = "name")]
+    pub name: String,
+    #[serde(rename = "alias")]
+    pub aliases: Vec<Alias>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct Alias {
+    #[serde(rename = "name")]
+    pub name: String,
+}
+
+impl Default for SongAliases {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl SongAliases {
+    /// Creates a new empty SongAliases struct
+    ///
+    /// # Returns
+    /// * `SongAliases` - A new SongAliases struct with an empty vector of songs
+    pub fn new() -> Self {
+        SongAliases { songs: Vec::new() }
+    }
+
+    /// Parses a SongAliases struct from an XML string
+    ///
+    /// # Arguments
+    /// * `xml` - A string containing XML data
+    ///
+    /// # Returns
+    /// * `Result<Self, serde_xml_rust::Error>` - The parsed SongAliases on success, or a deserialization error
+    pub fn from_xml(xml: &str) -> Result<Self, serde_xml_rust::Error> {
+        serde_xml_rust::from_str(xml)
+    }
+}
+
 // TODO:
 // setlist.status should be Enum
 // setlist.event_date should maybe be some date type

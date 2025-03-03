@@ -37,6 +37,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         e
     })?;
 
+    let alias_file = std::fs::read_to_string("master_aliases.xml").unwrap();
+    mpdb.aliases = SongAliases::from_xml(&alias_file).map_err(|e| {
+        error!("XML parsing error: {}", e);
+        e
+    })?;
+
+    debug!("{:?}", mpdb.aliases);
+
     // setlists_to_db(master)?;
 
     let result = mpdb.add_all_countries().await;
@@ -77,6 +85,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             debug!("{:?}", mpdb.artists);
         }
         Err(e) => error!("Error adding artists: {e}"),
+    }
+
+    let result = mpdb.add_all_songaliases().await;
+    match result {
+        Ok(_) => info!("Added all songaliases"),
+        Err(e) => error!("Error adding songaliases: {e}"),
     }
 
     let result = mpdb.add_all_songtitles().await;
