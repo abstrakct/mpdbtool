@@ -40,8 +40,11 @@ pub struct Songtitle {
 
 #[derive(Deserialize, Debug)]
 pub struct Mpdb {
+    // Config
     base_url: String,
+    // Raw data
     pub master: Setlists,
+    // Parsed and structured data
     pub countries: Vec<Country>,
     pub cities: Vec<City>,
     pub venues: Vec<Venue>,
@@ -326,25 +329,23 @@ impl Mpdb {
         let client = reqwest::Client::new();
         let url = format!("{}/api/artists", self.base_url);
 
+        // Make sure Motorpsycho exists and is the first artist
+        let mp = "Motorpsycho";
+        let data = serde_json::json!({
+            "name": mp,
+            "slug": mp.to_string().slug()
+        });
+        let res = client.post(&url).json(&data).send().await?;
+        if res.status().is_success() {
+            info!("[SUCC] Motorpsycho added");
+        } else {
+            error!("[FAIL] adding Motorpsycho");
+        }
+
         let existing_artists = client.get(&url).send().await?;
         let existing_artists: Vec<Artist> = existing_artists.json().await?;
         let existing_artists: HashSet<String> =
             existing_artists.iter().map(|a| a.name.clone()).collect();
-
-        // Make sure Motorpsycho exists and is the first artist
-        let mp = "Motorpsycho";
-        if !existing_artists.contains(mp) {
-            let data = serde_json::json!({
-                "name": mp,
-                "slug": mp.to_string().slug()
-            });
-            let res = client.post(&url).json(&data).send().await?;
-            if res.status().is_success() {
-                info!("[SUCC] Motorpsycho added");
-            } else {
-                error!("[FAIL] adding Motorpsycho");
-            }
-        }
 
         for artist in artists {
             info!("[ADD?] artist {}", artist);
@@ -535,6 +536,7 @@ impl Mpdb {
 
         let existing_songtitles = client.get(&url).send().await?;
         let existing_songtitles: Vec<Songtitle> = existing_songtitles.json().await?;
+
         Ok(existing_songtitles)
     }
 }
