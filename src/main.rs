@@ -98,6 +98,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Err(e) => error!("Error adding songtitles: {e}"),
     }
+
+    let result = mpdb.add_all_concerts().await;
+    match result {
+        Ok(c) => {
+            info!("Added all concerts");
+            mpdb.concerts = c;
+            debug!("{:?}", mpdb.concerts);
+        }
+        Err(e) => error!("Error adding concerts: {e}"),
+    }
+
     Ok(())
 }
 

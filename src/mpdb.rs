@@ -1,5 +1,5 @@
 use log::{debug, error, info};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
 use crate::setlists::*;
@@ -38,6 +38,39 @@ pub struct Songtitle {
     is_default: bool,
 }
 
+#[derive(Serialize, Deserialize, Debug, Default)]
+pub struct Concert {
+    id: i32,
+    artist_id: i32,
+    date: chrono::NaiveDate,
+    disambiguation: Option<String>,
+    sort_order: Option<i32>,
+    source: Option<String>,
+    slug: String,
+    venue_id: i32,
+}
+
+#[allow(dead_code)]
+impl Concert {
+    fn identifier(&self) -> String {
+        match &self.disambiguation {
+            Some(d) => format!("{}-{}", self.date, d).to_string().slug(),
+            None => self.date.to_string().slug(),
+        }
+    }
+
+    fn identifier_with_prefix(&self, prefix: String) -> String {
+        match &self.disambiguation {
+            Some(d) => format!("{}-{}-{}", prefix, self.date, d).to_string().slug(),
+            None => format!("{}-{}", prefix, self.date).to_string().slug(),
+        }
+    }
+
+    fn set_date(&mut self, date: String) {
+        self.date = chrono::NaiveDate::parse_from_str(&date, "%d-%m-%Y").unwrap();
+    }
+}
+
 #[derive(Deserialize, Debug)]
 pub struct Mpdb {
     // Config
@@ -51,6 +84,7 @@ pub struct Mpdb {
     pub artists: Vec<Artist>,
     pub songtitles: Vec<Songtitle>,
     pub aliases: SongAliases,
+    pub concerts: Vec<Concert>,
 }
 
 impl Mpdb {
@@ -64,6 +98,7 @@ impl Mpdb {
             venues: vec![],
             artists: vec![],
             songtitles: vec![],
+            concerts: vec![],
         }
     }
 
@@ -163,6 +198,13 @@ impl Mpdb {
                 c.name == city_name && c.country_id == self.get_country_id(country_name).unwrap()
             })
             .map(|c| c.id)
+    }
+
+    fn get_venue_id(&self, venue_name: &str) -> Option<i32> {
+        self.venues
+            .iter()
+            .find(|v| v.name == venue_name)
+            .map(|v| v.id)
     }
 
     fn get_artist_id(&self, artist_name: &str) -> Option<i32> {
@@ -538,5 +580,61 @@ impl Mpdb {
         let existing_songtitles: Vec<Songtitle> = existing_songtitles.json().await?;
 
         Ok(existing_songtitles)
+    }
+
+    pub async fn add_all_concerts(&self) -> reqwest::Result<Vec<Concert>> {
+        let client = reqwest::Client::new();
+        let url = format!("{}/api/concerts", self.base_url);
+
+        let existing_concerts = client.get(&url).send().await?;
+        let existing_concerts: Vec<Concert> = existing_concerts.json().await?;
+        debug!("Existing concerts: {:?}", existing_concerts);
+        // let existing_concerts: HashSet<String> =
+        //     existing_concerts.iter().map(|c| c.name.clone()).collect();
+
+        for setlist in self.master.data.iter() {
+            let artist_id = self.get_artist_id(&setlist.artist.name);
+            let venue_id = self.get_venue_id(&setlist.venue.name);
+            let mut concert = Concert {
+                artist_id: artist_id.unwrap_or(1),
+                date: chrono::NaiveDate::parse_from_str(&setlist.event_date, "%d-%m-%Y").unwrap(),
+                venue_id: venue_id.unwrap_or(1),
+                disambiguation: setlist.disambiguation.clone(),
+                sort_order: setlist.sort_order,
+                source: setlist.source.clone(),
+                ..Default::default()
+            };
+            let slug = concert.identifier_with_prefix(setlist.artist.name.clone());
+            concert.slug = slug;
+            if existing_concerts.iter().any(|c| c.slug == concert.slug) {
+                info!("[UPDT] {} already exists - updating", concert.slug);
+
+                concert.id = existing_concerts
+                    .iter()
+                    .find(|c| c.slug == concert.slug)
+                    .map(|c| c.id)
+                    .unwrap_or_default();
+
+                let url = format!("{}/api/concerts/{}", self.base_url, concert.id);
+                let res = client.put(&url).json(&concert).send().await?;
+                if res.status().is_success() {
+                    info!("[SUCC] {} updated", concert.slug);
+                } else {
+                    error!("[FAIL] updating concert {}", concert.slug);
+                }
+            } else {
+                info!("[ADD!] {}", concert.slug);
+                let res = client.post(&url).json(&concert).send().await?;
+                if res.status().is_success() {
+                    info!("[SUCC] {} added", concert.slug);
+                } else {
+                    error!("[FAIL] adding concert {}", concert.slug);
+                }
+            }
+        }
+
+        let existing_concerts = client.get(&url).send().await?;
+        let existing_concerts: Vec<Concert> = existing_concerts.json().await?;
+        Ok(existing_concerts)
     }
 }
