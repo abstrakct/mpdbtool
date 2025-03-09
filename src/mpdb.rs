@@ -579,6 +579,7 @@ impl Mpdb {
         debug!("Existing concerts: {:?}", existing_concerts);
 
         for setlist in self.master.data.iter() {
+            // Create a concert object
             let artist_id = self.get_artist_id(&setlist.artist.name);
             let venue_id = self.get_venue_id(&setlist.venue.name);
             let mut concert = Concert {
@@ -590,8 +591,14 @@ impl Mpdb {
                 source: setlist.source.clone(),
                 ..Default::default()
             };
+
+            // Now we can create the slug for the concert
             let slug = concert.identifier_with_prefix(setlist.artist.name.clone());
             concert.slug = slug;
+
+            // Loop through the existing concerts and check if the slug already exists
+            // If it does, update the concert
+            // If it doesn't, add the concert
             if existing_concerts.iter().any(|c| c.slug == concert.slug) {
                 info!("[UPDT] {} already exists - updating", concert.slug);
 
