@@ -218,6 +218,13 @@ impl Mpdb {
         id
     }
 
+    fn get_concert_id(&self, concert_slug: &str) -> Option<i32> {
+        self.concerts
+            .iter()
+            .find(|c| c.slug == concert_slug)
+            .map(|c| c.id)
+    }
+
     pub async fn populate_contries(&self) -> reqwest::Result<Vec<Country>> {
         let countries = self.extract_all_unique_country_names();
         let client = reqwest::Client::new();
