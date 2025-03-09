@@ -90,6 +90,10 @@ pub struct Setlist {
     pub status: String,
     #[serde(rename = "eventDate")]
     pub event_date: String,
+    #[serde(rename = "disambiguation")]
+    pub disambiguation: Option<String>,
+    #[serde(rename = "sortOrder")]
+    pub sort_order: Option<i32>,
     pub source: Option<String>,
     pub artist: Artist,
     pub venue: Venue,
