@@ -434,26 +434,7 @@ impl Mpdb {
 
         debug!("Adding songaliases");
 
-        // let existing_songtitles = client.get(&url).send().await?;
-        // let existing_songtitles: Vec<Songtitle> = existing_songtitles.json().await?;
-        // let existing_songtitles: HashSet<String> = existing_songtitles
-        //     .iter()
-        //     .map(|s| s.title.clone())
-        //     .collect();
-
         for songwithaliases in self.aliases.songs.clone() {
-            // Check if songtitle already exists
-            // if existing_songtitles.contains(&songwithaliases.name) {
-            //     info!(
-            //         "[SKIP] songtitle {} (slug {}) already exists.",
-            //         songwithaliases.name,
-            //         songwithaliases.name.slug()
-            //     );
-            //     continue;
-            // }
-
-            // songtitle doesn't exist, so add it
-
             // add a song and get the id
             let songdata = serde_json::json!({
                 "artist_id": 1,
@@ -596,8 +577,6 @@ impl Mpdb {
         let existing_concerts = client.get(&url).send().await?;
         let existing_concerts: Vec<Concert> = existing_concerts.json().await?;
         debug!("Existing concerts: {:?}", existing_concerts);
-        // let existing_concerts: HashSet<String> =
-        //     existing_concerts.iter().map(|c| c.name.clone()).collect();
 
         for setlist in self.master.data.iter() {
             let artist_id = self.get_artist_id(&setlist.artist.name);
