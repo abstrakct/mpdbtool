@@ -1,4 +1,4 @@
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
@@ -388,7 +388,7 @@ impl Mpdb {
         if res.status().is_success() {
             info!("[SUCC] Motorpsycho added");
         } else {
-            error!("[FAIL] adding Motorpsycho");
+            warn!("[FAIL] adding Motorpsycho");
         }
 
         let existing_artists = client.get(&url).send().await?;
@@ -459,7 +459,7 @@ impl Mpdb {
                     songwithaliases.name, slug, song_id
                 );
             } else {
-                error!(
+                warn!(
                     "[FAIL] adding songtitle: {}, slug {}, song_id {}",
                     songwithaliases.name, slug, song_id
                 );
@@ -481,7 +481,7 @@ impl Mpdb {
                         alias.name, slug, song_id
                     );
                 } else {
-                    error!(
+                    warn!(
                         "[FAIL] adding alias songtitle: {}, slug {}, song_id {}",
                         alias.name, slug, song_id
                     );
