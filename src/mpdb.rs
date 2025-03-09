@@ -218,7 +218,7 @@ impl Mpdb {
         id
     }
 
-    pub async fn add_all_countries(&self) -> reqwest::Result<Vec<Country>> {
+    pub async fn populate_contries(&self) -> reqwest::Result<Vec<Country>> {
         let countries = self.extract_all_unique_country_names();
         let client = reqwest::Client::new();
         let url = format!("{}/api/countries", self.base_url);
@@ -257,7 +257,7 @@ impl Mpdb {
         Ok(existing_countries)
     }
 
-    pub async fn add_all_cities(&self) -> reqwest::Result<Vec<City>> {
+    pub async fn populate_cities(&self) -> reqwest::Result<Vec<City>> {
         let cities = self.extract_all_unique_cities();
         let client = reqwest::Client::new();
         let url = format!("{}/api/cities", self.base_url);
@@ -306,7 +306,7 @@ impl Mpdb {
         Ok(existing_cities)
     }
 
-    pub async fn add_all_venues(&self) -> reqwest::Result<Vec<Venue>> {
+    pub async fn populate_venues(&self) -> reqwest::Result<Vec<Venue>> {
         let venues = self.extract_all_unique_venues();
         let client = reqwest::Client::new();
         let url = format!("{}/api/venues", self.base_url);
@@ -366,7 +366,7 @@ impl Mpdb {
         Ok(existing_venues)
     }
 
-    pub async fn add_all_artists(&self) -> reqwest::Result<Vec<Artist>> {
+    pub async fn populate_artists(&self) -> reqwest::Result<Vec<Artist>> {
         let artists = self.extract_all_unique_artists();
         let client = reqwest::Client::new();
         let url = format!("{}/api/artists", self.base_url);
@@ -417,7 +417,7 @@ impl Mpdb {
         Ok(existing_artists)
     }
 
-    pub async fn add_all_songaliases(&self) -> reqwest::Result<()> {
+    pub async fn populate_songaliases(&self) -> reqwest::Result<()> {
         // let songtitles = self.extract_all_unique_songs();
         let client = reqwest::Client::new();
         let url = format!("{}/api/songtitles", self.base_url);
@@ -503,7 +503,7 @@ impl Mpdb {
         Ok(())
     }
 
-    pub async fn add_all_songtitles(&self) -> reqwest::Result<Vec<Songtitle>> {
+    pub async fn populate_songtitles(&self) -> reqwest::Result<Vec<Songtitle>> {
         let songtitles = self.extract_all_unique_songs();
         let client = reqwest::Client::new();
         let url = format!("{}/api/songtitles", self.base_url);
@@ -582,7 +582,7 @@ impl Mpdb {
         Ok(existing_songtitles)
     }
 
-    pub async fn add_all_concerts(&self) -> reqwest::Result<Vec<Concert>> {
+    pub async fn populate_concerts(&self) -> reqwest::Result<Vec<Concert>> {
         let client = reqwest::Client::new();
         let url = format!("{}/api/concerts", self.base_url);
 

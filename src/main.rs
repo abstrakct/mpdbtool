@@ -43,7 +43,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // setlists_to_db(master)?;
 
-    let result = mpdb.add_all_countries().await;
+    let result = mpdb.populate_contries().await;
     match result {
         Ok(c) => {
             info!("Added all countries");
@@ -53,7 +53,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Err(e) => error!("Error adding countries: {e}"),
     }
 
-    let result = mpdb.add_all_cities().await;
+    let result = mpdb.populate_cities().await;
     match result {
         Ok(c) => {
             info!("Added all cities");
@@ -63,7 +63,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Err(e) => error!("Error adding cities: {e}"),
     }
 
-    let result = mpdb.add_all_venues().await;
+    let result = mpdb.populate_venues().await;
     match result {
         Ok(c) => {
             info!("Added all venues");
@@ -73,7 +73,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Err(e) => error!("Error adding venues: {e}"),
     }
 
-    let result = mpdb.add_all_artists().await;
+    let result = mpdb.populate_artists().await;
     match result {
         Ok(c) => {
             info!("Added all artists");
@@ -83,13 +83,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Err(e) => error!("Error adding artists: {e}"),
     }
 
-    let result = mpdb.add_all_songaliases().await;
+    let result = mpdb.populate_songaliases().await;
     match result {
         Ok(_) => info!("Added all songaliases"),
         Err(e) => error!("Error adding songaliases: {e}"),
     }
 
-    let result = mpdb.add_all_songtitles().await;
+    let result = mpdb.populate_songtitles().await;
     match result {
         Ok(c) => {
             info!("Added all songtitles");
@@ -99,7 +99,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Err(e) => error!("Error adding songtitles: {e}"),
     }
 
-    let result = mpdb.add_all_concerts().await;
+    let result = mpdb.populate_concerts().await;
     match result {
         Ok(c) => {
             info!("Added all concerts");
