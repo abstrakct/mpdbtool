@@ -1,43 +1,20 @@
 // Internal modules
+mod cli;
 mod mpdb;
 mod setlists;
 mod slug;
 mod tests;
 
+use cli::*;
 use mpdb::Mpdb;
 use setlists::{Setlists, SongAliases};
 
 // External crates
+use clap::Parser;
 use config::Config;
 use log::{debug, error, info};
 
 const CONFIG_FILE: &str = "mpdbtoolconfig.toml";
-
-use clap::{Parser, Subcommand};
-
-#[derive(Parser)]
-#[command(author, version, about, long_about = None)]
-pub struct Cli {
-    #[command(subcommand)]
-    command: Commands,
-}
-
-#[derive(Subcommand)]
-pub enum Commands {
-    /// Database commands
-    Db {
-        #[command(subcommand)]
-        command: DbCommands,
-    },
-}
-
-#[derive(Subcommand)]
-pub enum DbCommands {
-    /// Populate the database from a local XML file
-    Populate,
-    /// Reset the database (delete all data) (not implemented yet)
-    Reset,
-}
 
 async fn populate_db(mpdb_base_url: String) -> Result<(), Box<dyn std::error::Error>> {
     let mut mpdb: Mpdb = Mpdb::new(mpdb_base_url);
