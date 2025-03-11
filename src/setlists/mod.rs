@@ -46,6 +46,17 @@ impl SongAliases {
         serde_xml_rust::from_str(xml)
     }
 
+    /// Parses a SongAliases struct from a YAML string
+    ///
+    /// # Arguments
+    /// * `yml` - A string containing YAML data
+    ///
+    /// # Returns
+    /// * `Result<Self, serde_yml::Error>` - The parsed SongAliases on success, or a deserialization error
+    pub fn from_yml(yml: &str) -> Result<Self, serde_yml::Error> {
+        serde_yml::from_str(yml)
+    }
+
     /// Converts the SongAliases struct to a YAML string
     ///
     /// # Returns
@@ -89,6 +100,17 @@ impl Setlists {
     /// * `Result<Self, serde_xml_rust::Error>` - The parsed Setlists on success, or a deserialization error
     pub fn from_xml(xml: &str) -> Result<Self, serde_xml_rust::Error> {
         serde_xml_rust::from_str(xml)
+    }
+
+    /// Parses a Setlists struct from a YAML string
+    ///
+    /// # Arguments
+    /// * `yml` - A string containing YAML data
+    ///
+    /// # Returns
+    /// * `Result<Self, serde_xml_rust::Error>` - The parsed Setlists on success, or a deserialization error
+    pub fn from_yml(yml: &str) -> Result<Self, serde_yml::Error> {
+        serde_yml::from_str(yml)
     }
 
     /// Converts the Setlists struct to a YAML string
