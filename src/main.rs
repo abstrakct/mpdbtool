@@ -16,26 +16,21 @@ use log::{debug, error, info};
 
 const CONFIG_FILE: &str = "mpdbtoolconfig.toml";
 
-async fn populate_db(
-    mpdb_base_url: String,
-    master_filename: String,
-    aliases_filename: String,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let mut mpdb: Mpdb = Mpdb::new(mpdb_base_url);
-    let file = std::fs::read_to_string(master_filename).unwrap();
-    // let file = std::fs::read_to_string("master.xml")?;
+enum FileFormat {
+    Xml,
+    Yml,
+}
 
-    mpdb.master = Setlists::from_xml(&file).map_err(|e| {
-        error!("XML parsing error: {}", e);
-        e
-    })?;
+impl FileFormat {
+    fn extension(&self) -> &'static str {
+        match self {
+            FileFormat::Xml => "xml",
+            FileFormat::Yml => "yml",
+        }
+    }
+}
 
-    let alias_file = std::fs::read_to_string(aliases_filename).unwrap();
-    mpdb.aliases = SongAliases::from_xml(&alias_file).map_err(|e| {
-        error!("XML parsing error: {}", e);
-        e
-    })?;
-
+async fn populate_db(mpdb: &mut Mpdb) -> Result<(), Box<dyn std::error::Error>> {
     debug!("{:?}", mpdb.aliases);
 
     info!("Populating countries");
@@ -82,6 +77,7 @@ async fn populate_db(
         Err(e) => error!("Error adding artists: {e}"),
     }
 
+    // TODO: We don't need this anymore, do we?
     info!("Populating songaliases");
     let result = mpdb.populate_songaliases().await;
     match result {
@@ -121,10 +117,7 @@ async fn reset_db(_mpdb_base_url: String) -> Result<(), Box<dyn std::error::Erro
     // Ok(())
 }
 
-async fn xml_to_yml(
-    alias_filename: String,
-    master_filename: String,
-) -> Result<(), Box<dyn std::error::Error>> {
+async fn xml_to_yml(alias_filename: String, master_filename: String) -> Result<(), Box<dyn std::error::Error>> {
     info!("Converting XML to YAML");
 
     // First, the aliases file
@@ -178,8 +171,49 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     match cli.command {
         Commands::Db { command } => match command {
-            DbCommands::Populate => {
-                populate_db(mpdb_base_url, master_filename, aliases_filename).await?
+            DbCommands::Populate { xml, yml } => {
+                let mut mpdb = Mpdb::new(mpdb_base_url);
+
+                // Determine file format
+                let format = match (xml, yml) {
+                    (true, false) => FileFormat::Xml,
+                    (false, true) => FileFormat::Yml,
+                    _ => return Err("Exactly one format (--xml or --yml) must be specified".into()),
+                };
+
+                // Load and parse files
+                debug!("Loading master file: {}.{}", master_filename, format.extension());
+                let master_content = std::fs::read_to_string(format!("{}.{}", master_filename, format.extension()))?;
+                debug!("Loading alias file: {}.{}", aliases_filename, format.extension());
+                let alias_content = std::fs::read_to_string(format!("{}.{}", aliases_filename, format.extension()))?;
+
+                mpdb.master = match format {
+                    FileFormat::Xml => {
+                        Setlists::from_xml(&master_content).map_err(|e| format!("XML parse error: {}", e))
+                    }
+                    FileFormat::Yml => {
+                        Setlists::from_yml(&master_content).map_err(|e| format!("YAML parse error: {}", e))
+                    }
+                }
+                .map_err(|e| {
+                    error!("Failed to parse master file: {}", e);
+                    e
+                })?;
+
+                mpdb.aliases = match format {
+                    FileFormat::Xml => {
+                        SongAliases::from_xml(&alias_content).map_err(|e| format!("XML parse error: {}", e))
+                    }
+                    FileFormat::Yml => {
+                        SongAliases::from_yml(&alias_content).map_err(|e| format!("YAML parse error: {}", e))
+                    }
+                }
+                .map_err(|e| {
+                    error!("Failed to parse aliases file: {}", e);
+                    e
+                })?;
+
+                populate_db(&mut mpdb).await?
             }
             DbCommands::Reset => reset_db(mpdb_base_url).await?,
         },
@@ -223,10 +257,7 @@ fn dump_setlists(master: Setlists) {
                 for song in songs {
                     println!("{}", song.name);
                     if song.original_artist.is_some() {
-                        println!(
-                            "-- COVER!!! Original Artist: {}",
-                            song.original_artist.unwrap().name
-                        );
+                        println!("-- COVER!!! Original Artist: {}", song.original_artist.unwrap().name);
                     }
                     if song.notes.is_some() {
                         println!("Song notes: {}", song.notes.unwrap());
