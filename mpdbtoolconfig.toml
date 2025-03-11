@@ -1,2 +1,3 @@
 mpdb_base_url = "http://localhost:5150"
 master_filename = "master_subset.xml"
+aliases_filename = "master_aliases.xml"

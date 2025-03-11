@@ -16,9 +16,13 @@ use log::{debug, error, info};
 
 const CONFIG_FILE: &str = "mpdbtoolconfig.toml";
 
-async fn populate_db(mpdb_base_url: String) -> Result<(), Box<dyn std::error::Error>> {
+async fn populate_db(
+    mpdb_base_url: String,
+    master_filename: String,
+    aliases_filename: String,
+) -> Result<(), Box<dyn std::error::Error>> {
     let mut mpdb: Mpdb = Mpdb::new(mpdb_base_url);
-    let file = std::fs::read_to_string("master_subset.xml").unwrap();
+    let file = std::fs::read_to_string(master_filename).unwrap();
     // let file = std::fs::read_to_string("master.xml")?;
 
     mpdb.master = Setlists::from_xml(&file).map_err(|e| {
@@ -26,7 +30,7 @@ async fn populate_db(mpdb_base_url: String) -> Result<(), Box<dyn std::error::Er
         e
     })?;
 
-    let alias_file = std::fs::read_to_string("master_aliases.xml").unwrap();
+    let alias_file = std::fs::read_to_string(aliases_filename).unwrap();
     mpdb.aliases = SongAliases::from_xml(&alias_file).map_err(|e| {
         error!("XML parsing error: {}", e);
         e
@@ -117,7 +121,10 @@ async fn reset_db(_mpdb_base_url: String) -> Result<(), Box<dyn std::error::Erro
     // Ok(())
 }
 
-async fn xml_to_yml(filename: String) -> Result<(), Box<dyn std::error::Error>> {
+async fn xml_to_yml(
+    master_filename: String,
+    aliases_filename: String,
+) -> Result<(), Box<dyn std::error::Error>> {
     todo!()
 }
 
@@ -130,6 +137,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mpdb_base_url = settings.get_string("mpdb_base_url")?;
     let master_filename = settings.get_string("master_filename")?;
+    let aliases_filename = settings.get_string("aliases_filename")?;
 
     // Parse CLI arguments
     let cli = Cli::parse();
@@ -140,11 +148,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     match cli.command {
         Commands::Db { command } => match command {
-            DbCommands::Populate => populate_db(mpdb_base_url).await?,
+            DbCommands::Populate => {
+                populate_db(mpdb_base_url, master_filename, aliases_filename).await?
+            }
             DbCommands::Reset => reset_db(mpdb_base_url).await?,
         },
         Commands::Xml { command } => match command {
-            XmlCommands::Convert => xml_to_yml(master_filename).await?,
+            XmlCommands::Convert => xml_to_yml(master_filename, aliases_filename).await?,
         },
     }
 
