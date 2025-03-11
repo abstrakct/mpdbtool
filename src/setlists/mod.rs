@@ -26,6 +26,7 @@ impl Default for SongAliases {
     }
 }
 
+#[allow(dead_code)]
 impl SongAliases {
     /// Creates a new empty SongAliases struct
     ///
@@ -82,6 +83,7 @@ impl Default for Setlists {
     }
 }
 
+#[allow(dead_code)]
 impl Setlists {
     /// Creates a new empty Setlists struct
     ///
