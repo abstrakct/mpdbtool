@@ -45,6 +45,10 @@ impl SongAliases {
     pub fn from_xml(xml: &str) -> Result<Self, serde_xml_rust::Error> {
         serde_xml_rust::from_str(xml)
     }
+
+    pub fn to_yml(&self) -> Result<String, serde_yml::Error> {
+        serde_yml::to_string(self)
+    }
 }
 
 // TODO:
