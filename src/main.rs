@@ -121,19 +121,38 @@ async fn reset_db(_mpdb_base_url: String) -> Result<(), Box<dyn std::error::Erro
     // Ok(())
 }
 
-async fn xml_to_yml(filename: String) -> Result<(), Box<dyn std::error::Error>> {
+async fn xml_to_yml(
+    alias_filename: String,
+    master_filename: String,
+) -> Result<(), Box<dyn std::error::Error>> {
     info!("Converting XML to YAML");
-    info!("Reading XML file: {}", filename);
-    let alias_file = std::fs::read_to_string(filename.clone()).unwrap();
+
+    // First, the aliases file
+    info!("Reading alias file: {}", alias_filename);
+    let alias_file = std::fs::read_to_string(alias_filename.clone()).unwrap();
     let aliases = SongAliases::from_xml(&alias_file).map_err(|e| {
         error!("XML parsing error: {}", e);
         e
     })?;
 
-    info!("Converting XML to YAML");
+    info!("Converting aliases XML to YAML");
     let yml = aliases.to_yml()?;
-    let output_filename = format!("{}.yml", filename.split(".").next().unwrap());
-    info!("Writing YAML to file: {}", output_filename);
+    let output_filename = format!("{}.yml", alias_filename.split(".").next().unwrap());
+    info!("Writing aliases to YAML file: {}", output_filename);
+    std::fs::write(output_filename, yml)?;
+
+    // Then, the master file
+    info!("Reading master file: {}", master_filename);
+    let master_file = std::fs::read_to_string(master_filename.clone()).unwrap();
+    let master = Setlists::from_xml(&master_file).map_err(|e| {
+        error!("XML parsing error: {}", e);
+        e
+    })?;
+
+    info!("Converting master XML to YAML");
+    let yml = master.to_yml()?;
+    let output_filename = format!("{}.yml", master_filename.split(".").next().unwrap());
+    info!("Writing master to YAML file: {}", output_filename);
     std::fs::write(output_filename, yml)?;
 
     Ok(())
@@ -165,7 +184,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             DbCommands::Reset => reset_db(mpdb_base_url).await?,
         },
         Commands::Xml { command } => match command {
-            XmlCommands::Convert => xml_to_yml(aliases_filename).await?,
+            XmlCommands::Convert => xml_to_yml(aliases_filename, master_filename).await?,
         },
     }
 
