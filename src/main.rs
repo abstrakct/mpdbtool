@@ -178,7 +178,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let format = match (xml, yml) {
                     (true, false) => FileFormat::Xml,
                     (false, true) => FileFormat::Yml,
-                    _ => return Err("Exactly one format (--xml or --yml) must be specified".into()),
+                    _ => unreachable!("xml and yml options are mutually exclusive."), // return Err("Exactly one format (--xml or --yml) must be specified".into()),
                 };
 
                 // Load and parse files
