@@ -1,14 +1,15 @@
-use config::Config;
-use log::{debug, error, info};
-
+// Internal modules
 mod mpdb;
 mod setlists;
 mod slug;
+mod tests;
 
 use mpdb::Mpdb;
 use setlists::{Setlists, SongAliases};
 
-mod tests;
+// External crates
+use config::Config;
+use log::{debug, error, info};
 
 const CONFIG_FILE: &str = "mpdbtoolconfig.toml";
 
