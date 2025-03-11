@@ -12,22 +12,33 @@ mod tests;
 
 const CONFIG_FILE: &str = "mpdbtoolconfig.toml";
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Parse config
-    let settings = Config::builder()
-        .add_source(config::File::with_name(CONFIG_FILE))
-        .build()?;
+use clap::{Parser, Subcommand};
 
-    let mpdb_base_url = settings.get_string("mpdb_base_url")?;
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+pub struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
 
-    // Initialize logger
-    // env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
-    pretty_env_logger::init();
+#[derive(Subcommand)]
+pub enum Commands {
+    Db {
+        #[command(subcommand)]
+        command: DbCommands,
+    },
+}
 
+#[derive(Subcommand)]
+pub enum DbCommands {
+    Populate,
+}
+
+async fn populate_db(mpdb_base_url: String) -> Result<(), Box<dyn std::error::Error>> {
     let mut mpdb: Mpdb = Mpdb::new(mpdb_base_url);
     let file = std::fs::read_to_string("master_subset.xml").unwrap();
     // let file = std::fs::read_to_string("master.xml")?;
+
     mpdb.master = Setlists::from_xml(&file).map_err(|e| {
         error!("XML parsing error: {}", e);
         e
@@ -41,8 +52,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     debug!("{:?}", mpdb.aliases);
 
-    // setlists_to_db(master)?;
-
+    info!("Populating countries");
     let result = mpdb.populate_contries().await;
     match result {
         Ok(c) => {
@@ -53,6 +63,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Err(e) => error!("Error adding countries: {e}"),
     }
 
+    info!("Populating cities");
     let result = mpdb.populate_cities().await;
     match result {
         Ok(c) => {
@@ -63,6 +74,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Err(e) => error!("Error adding cities: {e}"),
     }
 
+    info!("Populating venues");
     let result = mpdb.populate_venues().await;
     match result {
         Ok(c) => {
@@ -73,6 +85,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Err(e) => error!("Error adding venues: {e}"),
     }
 
+    info!("Populating artists");
     let result = mpdb.populate_artists().await;
     match result {
         Ok(c) => {
@@ -83,12 +96,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Err(e) => error!("Error adding artists: {e}"),
     }
 
+    info!("Populating songaliases");
     let result = mpdb.populate_songaliases().await;
     match result {
         Ok(_) => info!("Added all songaliases"),
         Err(e) => error!("Error adding songaliases: {e}"),
     }
 
+    info!("Populating songtitles");
     let result = mpdb.populate_songtitles().await;
     match result {
         Ok(c) => {
@@ -99,6 +114,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Err(e) => error!("Error adding songtitles: {e}"),
     }
 
+    info!("Populating concerts");
     let result = mpdb.populate_concerts().await;
     match result {
         Ok(c) => {
@@ -107,6 +123,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             debug!("{:?}", mpdb.concerts);
         }
         Err(e) => error!("Error adding concerts: {e}"),
+    }
+
+    Ok(())
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Parse config
+    let settings = Config::builder()
+        .add_source(config::File::with_name(CONFIG_FILE))
+        .build()?;
+
+    let mpdb_base_url = settings.get_string("mpdb_base_url")?;
+
+    // Parse CLI arguments
+    let cli = Cli::parse();
+
+    // Initialize logger
+    // env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
+    pretty_env_logger::init();
+
+    match cli.command {
+        Commands::Db { command } => match command {
+            DbCommands::Populate => populate_db(mpdb_base_url).await?,
+        },
     }
 
     Ok(())
