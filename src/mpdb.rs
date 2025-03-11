@@ -596,4 +596,10 @@ impl Mpdb {
         let existing_concerts: Vec<Concert> = existing_concerts.json().await?;
         Ok(existing_concerts)
     }
+
+    pub async fn populate_performances(&self) -> reqwest::Result<()> {
+        let client = reqwest::Client::new();
+
+        Ok(())
+    }
 }
