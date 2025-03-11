@@ -121,11 +121,22 @@ async fn reset_db(_mpdb_base_url: String) -> Result<(), Box<dyn std::error::Erro
     // Ok(())
 }
 
-async fn xml_to_yml(
-    master_filename: String,
-    aliases_filename: String,
-) -> Result<(), Box<dyn std::error::Error>> {
-    todo!()
+async fn xml_to_yml(filename: String) -> Result<(), Box<dyn std::error::Error>> {
+    info!("Converting XML to YAML");
+    info!("Reading XML file: {}", filename);
+    let alias_file = std::fs::read_to_string(filename.clone()).unwrap();
+    let aliases = SongAliases::from_xml(&alias_file).map_err(|e| {
+        error!("XML parsing error: {}", e);
+        e
+    })?;
+
+    info!("Converting XML to YAML");
+    let yml = aliases.to_yml()?;
+    let output_filename = format!("{}.yml", filename.split(".").next().unwrap());
+    info!("Writing YAML to file: {}", output_filename);
+    std::fs::write(output_filename, yml)?;
+
+    Ok(())
 }
 
 #[tokio::main]
@@ -154,7 +165,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             DbCommands::Reset => reset_db(mpdb_base_url).await?,
         },
         Commands::Xml { command } => match command {
-            XmlCommands::Convert => xml_to_yml(master_filename, aliases_filename).await?,
+            XmlCommands::Convert => xml_to_yml(aliases_filename).await?,
         },
     }
 
