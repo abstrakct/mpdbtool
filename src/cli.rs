@@ -34,6 +34,7 @@ pub enum DbCommands {
             conflicts_with = "yml"
         )]
         xml: bool,
+
         #[arg(
             short = 'y',
             long = "yml",

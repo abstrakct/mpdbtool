@@ -194,11 +194,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     FileFormat::Yml => {
                         Setlists::from_yml(&master_content).map_err(|e| format!("YAML parse error: {}", e))
                     }
-                }
-                .map_err(|e| {
-                    error!("Failed to parse master file: {}", e);
-                    e
-                })?;
+                }?;
 
                 mpdb.aliases = match format {
                     FileFormat::Xml => {
@@ -207,11 +203,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     FileFormat::Yml => {
                         SongAliases::from_yml(&alias_content).map_err(|e| format!("YAML parse error: {}", e))
                     }
-                }
-                .map_err(|e| {
-                    error!("Failed to parse aliases file: {}", e);
-                    e
-                })?;
+                }?;
 
                 populate_db(&mut mpdb).await?
             }
