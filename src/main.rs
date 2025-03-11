@@ -23,6 +23,7 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
+    /// Database commands
     Db {
         #[command(subcommand)]
         command: DbCommands,
@@ -31,7 +32,10 @@ pub enum Commands {
 
 #[derive(Subcommand)]
 pub enum DbCommands {
+    /// Populate the database from a local XML file
     Populate,
+    /// Reset the database (delete all data) (not implemented yet)
+    Reset,
 }
 
 async fn populate_db(mpdb_base_url: String) -> Result<(), Box<dyn std::error::Error>> {
@@ -128,6 +132,13 @@ async fn populate_db(mpdb_base_url: String) -> Result<(), Box<dyn std::error::Er
     Ok(())
 }
 
+async fn reset_db(_mpdb_base_url: String) -> Result<(), Box<dyn std::error::Error>> {
+    // let mut mpdb: Mpdb = Mpdb::new(mpdb_base_url);
+    // mpdb.reset_db().await?;
+    todo!()
+    // Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Parse config
@@ -147,6 +158,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match cli.command {
         Commands::Db { command } => match command {
             DbCommands::Populate => populate_db(mpdb_base_url).await?,
+            DbCommands::Reset => reset_db(mpdb_base_url).await?,
         },
     }
 
