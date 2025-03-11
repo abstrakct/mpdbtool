@@ -14,6 +14,11 @@ pub enum Commands {
         #[command(subcommand)]
         command: DbCommands,
     },
+    /// XML commands,
+    Xml {
+        #[command(subcommand)]
+        command: XmlCommands,
+    },
 }
 
 #[derive(Subcommand)]
@@ -24,3 +29,8 @@ pub enum DbCommands {
     Reset,
 }
 
+#[derive(Subcommand)]
+pub enum XmlCommands {
+    /// Convert xml to yml
+    Convert,
+}

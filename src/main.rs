@@ -117,6 +117,10 @@ async fn reset_db(_mpdb_base_url: String) -> Result<(), Box<dyn std::error::Erro
     // Ok(())
 }
 
+async fn xml_to_yml(filename: String) -> Result<(), Box<dyn std::error::Error>> {
+    todo!()
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Parse config
@@ -125,6 +129,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build()?;
 
     let mpdb_base_url = settings.get_string("mpdb_base_url")?;
+    let master_filename = settings.get_string("master_filename")?;
 
     // Parse CLI arguments
     let cli = Cli::parse();
@@ -137,6 +142,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Commands::Db { command } => match command {
             DbCommands::Populate => populate_db(mpdb_base_url).await?,
             DbCommands::Reset => reset_db(mpdb_base_url).await?,
+        },
+        Commands::Xml { command } => match command {
+            XmlCommands::Convert => xml_to_yml(master_filename).await?,
         },
     }
 
