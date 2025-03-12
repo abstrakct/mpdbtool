@@ -42,10 +42,7 @@ mod tests {
         assert_eq!(setlists.data[0].venue.city.name, "Test City");
         assert_eq!(setlists.data[0].venue.city.country.name, "Test Country");
         assert_eq!(setlists.data[0].sets.set.len(), 1);
-        assert_eq!(
-            setlists.data[0].sets.set[0].name,
-            Some("Test Set".to_string())
-        );
+        assert_eq!(setlists.data[0].sets.set[0].name, Some("Test Set".to_string()));
         assert!(setlists.data[0].sets.set[0].songs.is_some());
         let songs = &setlists.data[0].sets.set[0].songs.as_ref().unwrap();
         assert_eq!(songs.len(), 1);
@@ -89,10 +86,7 @@ mod tests {
         assert_eq!(setlists.data[0].venue.city.name, "Test City");
         assert_eq!(setlists.data[0].venue.city.country.name, "Test Country");
         assert_eq!(setlists.data[0].sets.set.len(), 1);
-        assert_eq!(
-            setlists.data[0].sets.set[0].name,
-            Some("Test Set".to_string())
-        );
+        assert_eq!(setlists.data[0].sets.set[0].name, Some("Test Set".to_string()));
         assert!(setlists.data[0].sets.set[0].songs.is_none());
     }
 

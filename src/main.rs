@@ -153,7 +153,9 @@ async fn xml_to_yml(alias_filename: String, master_filename: String) -> Result<(
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Parse config
-    let settings = Config::builder().add_source(config::File::with_name(CONFIG_FILE)).build()?;
+    let settings = Config::builder()
+        .add_source(config::File::with_name(CONFIG_FILE))
+        .build()?;
 
     let mpdb_base_url = settings.get_string("mpdb_base_url")?;
     let master_filename = settings.get_string("master_filename")?;
@@ -185,13 +187,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let alias_content = std::fs::read_to_string(format!("{}.{}", aliases_filename, format.extension()))?;
 
                 mpdb.master = match format {
-                    FileFormat::Xml => Setlists::from_xml(&master_content).map_err(|e| format!("XML parse error: {}", e)),
-                    FileFormat::Yml => Setlists::from_yml(&master_content).map_err(|e| format!("YAML parse error: {}", e)),
+                    FileFormat::Xml => {
+                        Setlists::from_xml(&master_content).map_err(|e| format!("XML parse error: {}", e))
+                    }
+                    FileFormat::Yml => {
+                        Setlists::from_yml(&master_content).map_err(|e| format!("YAML parse error: {}", e))
+                    }
                 }?;
 
                 mpdb.aliases = match format {
-                    FileFormat::Xml => SongAliases::from_xml(&alias_content).map_err(|e| format!("XML parse error: {}", e)),
-                    FileFormat::Yml => SongAliases::from_yml(&alias_content).map_err(|e| format!("YAML parse error: {}", e)),
+                    FileFormat::Xml => {
+                        SongAliases::from_xml(&alias_content).map_err(|e| format!("XML parse error: {}", e))
+                    }
+                    FileFormat::Yml => {
+                        SongAliases::from_yml(&alias_content).map_err(|e| format!("YAML parse error: {}", e))
+                    }
                 }?;
 
                 populate_db(&mut mpdb).await?
