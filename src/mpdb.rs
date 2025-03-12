@@ -5,52 +5,52 @@ use std::collections::HashSet;
 use crate::setlists::*;
 use crate::slug::*;
 
-#[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize)]
+#[derive(Deserialize, Debug, Default, Clone, Copy, PartialEq, Eq, Hash, Serialize)]
 pub struct DbId(i32);
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Default, Clone, PartialEq, Eq, Hash, Serialize)]
 pub struct Country {
     id: DbId,
     name: String,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Default, Clone, PartialEq, Eq, Hash, Serialize)]
 pub struct City {
-    id: i32,
+    id: DbId,
     name: String,
     country_id: DbId,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Default, Clone, PartialEq, Eq, Hash, Serialize)]
 pub struct Venue {
-    id: i32,
+    id: DbId,
     name: String,
-    city_id: i32,
+    city_id: DbId,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Default, Clone, PartialEq, Eq, Hash, Serialize)]
 pub struct Artist {
-    id: i32,
+    id: DbId,
     name: String,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Default, Clone, PartialEq, Eq, Hash, Serialize)]
 pub struct Songtitle {
-    id: i32,
+    id: DbId,
     title: String,
     is_default: bool,
 }
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Deserialize, Debug, Default, Clone, PartialEq, Eq, Hash, Serialize)]
 pub struct Concert {
-    id: i32,
-    artist_id: i32,
+    id: DbId,
+    artist_id: DbId,
     date: chrono::NaiveDate,
     disambiguation: Option<String>,
     sort_order: Option<i32>,
     source: Option<String>,
     slug: String,
-    venue_id: i32,
+    venue_id: DbId,
 }
 
 #[allow(dead_code)]
@@ -186,25 +186,26 @@ impl Mpdb {
         self.countries.iter().find(|c| c.name == country_name).map(|c| c.id)
     }
 
-    fn get_city_id(&self, city_name: &str, country_name: &str) -> Option<i32> {
+    fn get_city_id(&self, city_name: &str, country_name: &str) -> Option<DbId> {
         self.cities
             .iter()
             .find(|c| c.name == city_name && c.country_id == self.get_country_id(country_name).unwrap())
             .map(|c| c.id)
     }
 
-    fn get_venue_id(&self, venue_name: &str) -> Option<i32> {
+    fn get_venue_id(&self, venue_name: &str) -> Option<DbId> {
         self.venues.iter().find(|v| v.name == venue_name).map(|v| v.id)
     }
 
-    fn get_artist_id(&self, artist_name: &str) -> Option<i32> {
+    fn get_artist_id(&self, artist_name: &str) -> Option<DbId> {
         debug!("Getting artist ID for {}", artist_name);
         let id = self.artists.iter().find(|c| c.name == artist_name).map(|c| c.id);
-        debug!("Artist ID: {}", id.unwrap_or(0));
+        let x: i32 = id.unwrap().0;
+        debug!("Artist ID: {}", x);
         id
     }
 
-    fn get_concert_id(&self, concert_slug: &str) -> Option<i32> {
+    fn get_concert_id(&self, concert_slug: &str) -> Option<DbId> {
         self.concerts.iter().find(|c| c.slug == concert_slug).map(|c| c.id)
     }
 
@@ -297,7 +298,7 @@ impl Mpdb {
 
         let existing_venues = client.get(&url).send().await?;
         let existing_venues: Vec<Venue> = existing_venues.json().await?;
-        let existing_venues: HashSet<(String, i32)> =
+        let existing_venues: HashSet<(String, DbId)> =
             existing_venues.iter().map(|c| (c.name.clone(), c.city_id)).collect();
 
         // println!("Existing venues: {existing_venues:?}");
@@ -333,8 +334,8 @@ impl Mpdb {
                     );
                 } else {
                     error!(
-                        "[FAIL] adding venue {} in city {} - city id {city_id} - in country {}",
-                        venue.0, venue.1, venue.2
+                        "[FAIL] adding venue {} in city {} - city id {} - in country {}",
+                        venue.0, venue.1, city_id.0, venue.2
                     );
                 }
             }
@@ -505,7 +506,7 @@ impl Mpdb {
             let songres = songclient.post(&songurl).json(&songdata).send().await?;
             let song_json: serde_json::Value = songres.json().await?;
             let song_id = song_json["id"].as_i64().unwrap_or_default();
-            info!("[SONG] Created song with ID: {}, artist_id: {}", song_id, artist_id);
+            info!("[SONG] Created song with ID: {}, artist_id: {}", song_id, artist_id.0);
 
             // add the songtitle
             let slug = songtitle.0.slug();
@@ -548,9 +549,9 @@ impl Mpdb {
             let artist_id = self.get_artist_id(&setlist.artist.name);
             let venue_id = self.get_venue_id(&setlist.venue.name);
             let mut concert = Concert {
-                artist_id: artist_id.unwrap_or(1),
+                artist_id: artist_id.unwrap_or_default(),
                 date: chrono::NaiveDate::parse_from_str(&setlist.event_date, "%d-%m-%Y").unwrap(),
-                venue_id: venue_id.unwrap_or(1),
+                venue_id: venue_id.unwrap_or_default(),
                 disambiguation: setlist.disambiguation.clone(),
                 sort_order: setlist.sort_order,
                 source: setlist.source.clone(),
@@ -573,7 +574,7 @@ impl Mpdb {
                     .map(|c| c.id)
                     .unwrap_or_default();
 
-                let url = format!("{}/api/concerts/{}", self.base_url, concert.id);
+                let url = format!("{}/api/concerts/{}", self.base_url, concert.id.0);
                 let res = client.put(&url).json(&concert).send().await?;
                 if res.status().is_success() {
                     info!("[SUCC] {} updated", concert.slug);
