@@ -5,9 +5,12 @@ use std::collections::HashSet;
 use crate::setlists::*;
 use crate::slug::*;
 
+#[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize)]
+pub struct DbId(i32);
+
 #[derive(Deserialize, Debug)]
 pub struct Country {
-    id: i32,
+    id: DbId,
     name: String,
 }
 
@@ -15,7 +18,7 @@ pub struct Country {
 pub struct City {
     id: i32,
     name: String,
-    country_id: i32,
+    country_id: DbId,
 }
 
 #[derive(Deserialize, Debug)]
@@ -159,12 +162,7 @@ impl Mpdb {
                         .as_ref()
                         .map(|songs| songs.iter())
                         .unwrap_or_else(|| [].iter())
-                        .map(|song| {
-                            (
-                                song.name.clone(),
-                                song.original_artist.as_ref().map(|a| a.name.clone()),
-                            )
-                        })
+                        .map(|song| (song.name.clone(), song.original_artist.as_ref().map(|a| a.name.clone())))
                 })
             })
             .collect()
@@ -184,45 +182,30 @@ impl Mpdb {
         Ok(())
     }
 
-    fn get_country_id(&self, country_name: &str) -> Option<i32> {
-        self.countries
-            .iter()
-            .find(|c| c.name == country_name)
-            .map(|c| c.id)
+    fn get_country_id(&self, country_name: &str) -> Option<DbId> {
+        self.countries.iter().find(|c| c.name == country_name).map(|c| c.id)
     }
 
     fn get_city_id(&self, city_name: &str, country_name: &str) -> Option<i32> {
         self.cities
             .iter()
-            .find(|c| {
-                c.name == city_name && c.country_id == self.get_country_id(country_name).unwrap()
-            })
+            .find(|c| c.name == city_name && c.country_id == self.get_country_id(country_name).unwrap())
             .map(|c| c.id)
     }
 
     fn get_venue_id(&self, venue_name: &str) -> Option<i32> {
-        self.venues
-            .iter()
-            .find(|v| v.name == venue_name)
-            .map(|v| v.id)
+        self.venues.iter().find(|v| v.name == venue_name).map(|v| v.id)
     }
 
     fn get_artist_id(&self, artist_name: &str) -> Option<i32> {
         debug!("Getting artist ID for {}", artist_name);
-        let id = self
-            .artists
-            .iter()
-            .find(|c| c.name == artist_name)
-            .map(|c| c.id);
+        let id = self.artists.iter().find(|c| c.name == artist_name).map(|c| c.id);
         debug!("Artist ID: {}", id.unwrap_or(0));
         id
     }
 
     fn get_concert_id(&self, concert_slug: &str) -> Option<i32> {
-        self.concerts
-            .iter()
-            .find(|c| c.slug == concert_slug)
-            .map(|c| c.id)
+        self.concerts.iter().find(|c| c.slug == concert_slug).map(|c| c.id)
     }
 
     pub async fn populate_contries(&self) -> reqwest::Result<Vec<Country>> {
@@ -232,8 +215,7 @@ impl Mpdb {
 
         let existing_countries = client.get(&url).send().await?;
         let existing_countries: Vec<Country> = existing_countries.json().await?;
-        let existing_countries: HashSet<String> =
-            existing_countries.iter().map(|c| c.name.clone()).collect();
+        let existing_countries: HashSet<String> = existing_countries.iter().map(|c| c.name.clone()).collect();
 
         // println!("Existing countries: {existing_countries:?}");
 
@@ -271,10 +253,8 @@ impl Mpdb {
 
         let existing_cities = client.get(&url).send().await?;
         let existing_cities: Vec<City> = existing_cities.json().await?;
-        let existing_cities: HashSet<(String, i32)> = existing_cities
-            .iter()
-            .map(|c| (c.name.clone(), c.country_id))
-            .collect();
+        let existing_cities: HashSet<(String, DbId)> =
+            existing_cities.iter().map(|c| (c.name.clone(), c.country_id)).collect();
 
         // println!("Existing cities: {existing_cities:?}");
 
@@ -285,10 +265,7 @@ impl Mpdb {
                 // Check if city already exists
                 if existing_cities.contains(&(city.0.clone(), country_id)) {
                     // TODO: send update request instead of skipping?
-                    info!(
-                        "[SKIP] city {} in country {} already exists.",
-                        city.0, city.1
-                    );
+                    info!("[SKIP] city {} in country {} already exists.", city.0, city.1);
                     continue;
                 }
 
@@ -320,18 +297,13 @@ impl Mpdb {
 
         let existing_venues = client.get(&url).send().await?;
         let existing_venues: Vec<Venue> = existing_venues.json().await?;
-        let existing_venues: HashSet<(String, i32)> = existing_venues
-            .iter()
-            .map(|c| (c.name.clone(), c.city_id))
-            .collect();
+        let existing_venues: HashSet<(String, i32)> =
+            existing_venues.iter().map(|c| (c.name.clone(), c.city_id)).collect();
 
         // println!("Existing venues: {existing_venues:?}");
 
         for venue in venues {
-            info!(
-                "[ADD?] venue {} in city {} in country {}",
-                venue.0, venue.1, venue.2
-            );
+            info!("[ADD?] venue {} in city {} in country {}", venue.0, venue.1, venue.2);
 
             if let Some(city_id) = self.get_city_id(&venue.1, &venue.2) {
                 // Check if venue already exists
@@ -393,8 +365,7 @@ impl Mpdb {
 
         let existing_artists = client.get(&url).send().await?;
         let existing_artists: Vec<Artist> = existing_artists.json().await?;
-        let existing_artists: HashSet<String> =
-            existing_artists.iter().map(|a| a.name.clone()).collect();
+        let existing_artists: HashSet<String> = existing_artists.iter().map(|a| a.name.clone()).collect();
 
         for artist in artists {
             info!("[ADD?] artist {}", artist);
@@ -503,10 +474,7 @@ impl Mpdb {
 
         let existing_songtitles = client.get(&url).send().await?;
         let existing_songtitles: Vec<Songtitle> = existing_songtitles.json().await?;
-        let existing_songtitles: HashSet<String> = existing_songtitles
-            .iter()
-            .map(|s| s.title.clone())
-            .collect();
+        let existing_songtitles: HashSet<String> = existing_songtitles.iter().map(|s| s.title.clone()).collect();
 
         for songtitle in songtitles {
             // Check if songtitle already exists
@@ -537,10 +505,7 @@ impl Mpdb {
             let songres = songclient.post(&songurl).json(&songdata).send().await?;
             let song_json: serde_json::Value = songres.json().await?;
             let song_id = song_json["id"].as_i64().unwrap_or_default();
-            info!(
-                "[SONG] Created song with ID: {}, artist_id: {}",
-                song_id, artist_id
-            );
+            info!("[SONG] Created song with ID: {}, artist_id: {}", song_id, artist_id);
 
             // add the songtitle
             let slug = songtitle.0.slug();
