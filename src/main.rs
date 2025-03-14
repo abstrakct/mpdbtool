@@ -34,7 +34,7 @@ async fn populate_db(mpdb: &mut Mpdb) -> Result<(), Box<dyn std::error::Error>> 
     debug!("{:?}", mpdb.aliases);
 
     info!("Populating countries");
-    let result = mpdb.populate_contries().await;
+    let result = mpdb.populate_countries().await;
     match result {
         Ok(c) => {
             info!("Added all countries");
