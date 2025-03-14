@@ -39,6 +39,7 @@ pub struct Songtitle {
     id: DbId,
     title: String,
     is_default: bool,
+    song_id: DbId,
 }
 
 #[derive(Deserialize, Debug, Default, Clone, PartialEq, Eq, Hash, Serialize)]
@@ -51,6 +52,24 @@ pub struct Concert {
     source: Option<String>,
     slug: String,
     venue_id: DbId,
+}
+
+#[derive(Deserialize, Debug, Default, Clone, PartialEq, Eq, Hash, Serialize)]
+pub struct Set {
+    id: DbId,
+    concert_id: DbId,
+    name: Option<String>,
+    unique_name: String,
+}
+
+#[derive(Deserialize, Debug, Default, Clone, PartialEq, Eq, Hash, Serialize)]
+pub struct Performance {
+    id: DbId,
+    set_id: DbId,
+    concert_id: DbId,
+    song_id: DbId,
+    artist_id: DbId,
+    segue: bool,
 }
 
 #[allow(dead_code)]
@@ -205,8 +224,16 @@ impl Mpdb {
         id
     }
 
-    fn get_concert_id(&self, concert_slug: &str) -> Option<DbId> {
+    fn get_concert_id(&self, concert_slug: String) -> Option<DbId> {
         self.concerts.iter().find(|c| c.slug == concert_slug).map(|c| c.id)
+    }
+
+    fn get_song_id(&self, title: String) -> Option<DbId> {
+        self.songtitles.iter().find(|s| s.title == title).map(|s| s.song_id)
+    }
+
+    fn get_songtitle_id(&self, title: String) -> Option<DbId> {
+        self.songtitles.iter().find(|s| s.title == title).map(|s| s.id)
     }
 
     pub async fn populate_countries(&self) -> reqwest::Result<Vec<Country>> {
@@ -599,6 +626,91 @@ impl Mpdb {
 
     pub async fn populate_performances(&self) -> reqwest::Result<()> {
         let client = reqwest::Client::new();
+        let set_url = format!("{}/api/sets", self.base_url);
+        let performance_url = format!("{}/api/performances", self.base_url);
+
+        for setlist in self.master.data.iter() {
+            let concert = Concert {
+                date: chrono::NaiveDate::parse_from_str(&setlist.event_date, "%d-%m-%Y").unwrap(),
+                disambiguation: setlist.disambiguation.clone(),
+                ..Default::default()
+            };
+            let concert_slug = concert.identifier_with_prefix(setlist.artist.name.clone());
+            let concert_id = self.get_concert_id(concert_slug.clone()).unwrap_or_default();
+
+            for set in setlist.sets.set.iter() {
+                let set_name = if set.encore.is_some() {
+                    Some(format!("Encore {}", set.encore.as_ref().unwrap()))
+                } else if set.name.is_some() {
+                    // Set is named, and is not an encore
+                    set.name.clone()
+                } else {
+                    // Set is not named, and not an encore
+                    None
+                };
+                let setdata = Set {
+                    concert_id,
+                    name: set_name.clone(),
+                    unique_name: format!(
+                        "{}-{}",
+                        concert_slug.clone(),
+                        set_name.clone().unwrap_or("main set".to_string()).slug()
+                    ),
+                    ..Default::default()
+                };
+
+                // For now we assume the db is empty and we don't have to deal with existing entities
+
+                info!(
+                    "[ADD!] set {} for concert {}",
+                    setdata.unique_name.clone(),
+                    concert_slug.clone()
+                );
+                let res = client.post(&set_url).json(&setdata).send().await?;
+
+                if res.status().is_success() {
+                    info!(
+                        "[SUCC] set {} for concert {} added",
+                        setdata.unique_name.clone(),
+                        concert_slug
+                    );
+                } else {
+                    warn!(
+                        "[FAIL] set {} for concert {}",
+                        setdata.unique_name.clone(),
+                        concert_slug
+                    );
+                }
+
+                let set_json: serde_json::Value = res.json().await?;
+                let set_id = set_json["id"].as_i64().unwrap_or_default() as i32;
+                let artist_id = self.get_artist_id(&setlist.artist.name);
+
+                if set.songs.is_some() {
+                    for performance in set.songs.clone().unwrap() {
+                        let song_id = self.get_song_id(performance.name.clone());
+                        info!("[ADD!] performance of song '{}'", performance.name);
+                        let perfdata = Performance {
+                            segue: performance.segue.unwrap_or(false),
+                            set_id: DbId(set_id),
+                            concert_id,
+                            artist_id: artist_id.unwrap(),
+                            song_id: song_id.unwrap(),
+                            ..Default::default()
+                        };
+
+                        let res = client.post(&performance_url).json(&perfdata).send().await?;
+                        if res.status().is_success() {
+                            info!("[SUCC] performance of song '{}' added", performance.name);
+                        } else {
+                            warn!("[FAIL] performance of song '{}'", performance.name);
+                        }
+                    }
+                } else {
+                    info!("[NULL] no performances found in this set");
+                }
+            }
+        }
 
         Ok(())
     }

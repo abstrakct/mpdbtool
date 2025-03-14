@@ -124,6 +124,22 @@ impl Setlists {
     }
 }
 
+/// Represents a setlist, which is a collection of songs played by an artist at a specific event.
+///
+/// A setlist includes information about the event, such as the date and venue, as well as the songs played.
+///
+/// # Fields
+///
+/// * `status`: The status of the setlist (e.g. "confirmed", "unconfirmed", etc.)
+/// * `event_date`: The date of the event
+/// * `disambiguation`: Optional disambiguation information for the event
+/// * `sort_order`: Optional sort order for the setlist
+/// * `source`: Optional source information for the setlist
+/// * `artist`: The artist who played the setlist
+/// * `venue`: The venue where the setlist was played
+/// * `tour`: Optional tour information for the setlist
+/// * `notes`: Optional notes about the setlist
+/// * `sets`: The sets played during the event
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Setlist {
     #[serde(rename = "status")]
@@ -193,7 +209,7 @@ pub struct Set {
 pub struct Song {
     #[serde(rename = "name")]
     pub name: String,
-    pub segue: Option<String>,
+    pub segue: Option<bool>,
     #[serde(rename = "cover")]
     pub original_artist: Option<Artist>,
     pub notes: Option<String>,
