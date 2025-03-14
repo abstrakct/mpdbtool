@@ -200,7 +200,7 @@ impl Mpdb {
     fn get_artist_id(&self, artist_name: &str) -> Option<DbId> {
         debug!("Getting artist ID for {}", artist_name);
         let id = self.artists.iter().find(|c| c.name == artist_name).map(|c| c.id);
-        let x: i32 = id.unwrap().0;
+        let x = id.unwrap().0;
         debug!("Artist ID: {}", x);
         id
     }
