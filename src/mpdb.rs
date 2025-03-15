@@ -68,6 +68,7 @@ pub struct Performance {
     set_id: DbId,
     concert_id: DbId,
     song_id: DbId,
+    songtitle_id: DbId,
     artist_id: DbId,
     segue: bool,
 }
@@ -689,6 +690,7 @@ impl Mpdb {
                 if set.songs.is_some() {
                     for performance in set.songs.clone().unwrap() {
                         let song_id = self.get_song_id(performance.name.clone());
+                        let songtitle_id = self.get_songtitle_id(performance.name.clone());
                         info!("[ADD!] performance of song '{}'", performance.name);
                         let perfdata = Performance {
                             segue: performance.segue.unwrap_or(false),
@@ -696,6 +698,7 @@ impl Mpdb {
                             concert_id,
                             artist_id: artist_id.unwrap(),
                             song_id: song_id.unwrap(),
+                            songtitle_id: songtitle_id.unwrap(),
                             ..Default::default()
                         };
 
