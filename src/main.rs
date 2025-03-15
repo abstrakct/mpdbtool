@@ -109,7 +109,7 @@ async fn populate_db(mpdb: &mut Mpdb) -> Result<(), Box<dyn std::error::Error>> 
     info!("Populating sets and performances");
     let result = mpdb.populate_performances().await;
     match result {
-        Ok(c) => {
+        Ok(_c) => {
             info!("Added all sets and performances");
             // mpdb.concerts = c;
             // debug!("{:?}", mpdb.concerts);
