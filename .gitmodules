@@ -1,0 +1,3 @@
+[submodule "mpdbmasterdata"]
+	path = mpdbmasterdata
+	url = http://git.darkstar.local/rolf/mpdbmasterdata.git
