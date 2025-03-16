@@ -146,13 +146,18 @@ pub struct Setlist {
     #[serde(rename = "eventDate")]
     pub event_date: String,
     #[serde(rename = "disambiguation")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub disambiguation: Option<String>,
     #[serde(rename = "sortOrder")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub sort_order: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
     pub artist: Artist,
     pub venue: Venue,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub tour: Option<Tour>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub notes: Option<String>,
     #[serde(rename = "sets")]
     pub sets: Sets,
@@ -161,8 +166,10 @@ pub struct Setlist {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Artist {
     pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "sortName")]
     pub sort_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub mbid: Option<String>,
 }
 
@@ -181,6 +188,7 @@ pub struct City {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Country {
     pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
 }
 
@@ -208,9 +216,12 @@ pub struct Set {
 pub struct Song {
     #[serde(rename = "name")]
     pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub segue: Option<bool>,
     #[serde(rename = "cover")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub original_artist: Option<Artist>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub notes: Option<String>,
     // #[serde(rename = "aliasFor")]
     // pub alias_for: Option<String>,
