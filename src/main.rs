@@ -184,6 +184,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .write_mode(WriteMode::BufferAndFlush)
         .duplicate_to_stderr(Duplicate::Warn)
         .create_symlink("current")
+        .format_for_files(flexi_logger::detailed_format)
         .start()?;
 
     match cli.command {
