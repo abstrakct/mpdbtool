@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SongAliases {
     #[serde(rename = "song")]
@@ -213,18 +212,18 @@ pub struct Song {
     #[serde(rename = "cover")]
     pub original_artist: Option<Artist>,
     pub notes: Option<String>,
-    #[serde(rename = "aliasFor")]
-    pub alias_for: Option<String>,
+    // #[serde(rename = "aliasFor")]
+    // pub alias_for: Option<String>,
 }
 
 impl Default for Song {
     fn default() -> Self {
         Self {
             name: "".to_string(),
-            segue: None,
+            segue: Some(false),
             original_artist: None,
             notes: None,
-            alias_for: None,
+            // alias_for: None,
         }
     }
 }
