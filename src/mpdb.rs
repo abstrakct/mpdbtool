@@ -230,11 +230,17 @@ impl Mpdb {
     }
 
     fn get_song_id(&self, title: String) -> Option<DbId> {
-        self.songtitles.iter().find(|s| s.title == title).map(|s| s.song_id)
+        self.songtitles
+            .iter()
+            .find(|s| s.title.slug() == title.slug())
+            .map(|s| s.song_id)
     }
 
     fn get_songtitle_id(&self, title: String) -> Option<DbId> {
-        self.songtitles.iter().find(|s| s.title == title).map(|s| s.id)
+        self.songtitles
+            .iter()
+            .find(|s| s.title.slug() == title.slug())
+            .map(|s| s.id)
     }
 
     pub async fn populate_countries(&self) -> reqwest::Result<Vec<Country>> {
