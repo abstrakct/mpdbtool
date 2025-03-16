@@ -170,8 +170,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build()?;
 
     let mpdb_base_url = settings.get_string("mpdb_base_url")?;
-    let master_filename = settings.get_string("master_filename")?;
-    let aliases_filename = settings.get_string("aliases_filename")?;
+    let master_path = settings.get_string("master_path")?;
+    let master_filename = format!("{}/{}", master_path, settings.get_string("master_filename")?);
+    let aliases_filename = format!("{}/{}", master_path, settings.get_string("aliases_filename")?);
 
     // Parse CLI arguments
     let cli = Cli::parse();

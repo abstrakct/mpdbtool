@@ -1,3 +1,4 @@
 mpdb_base_url = "http://localhost:5150"
+master_path = "mpdbmasterdata"
 master_filename = "master"
 aliases_filename = "master_aliases"
