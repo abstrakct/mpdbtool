@@ -557,7 +557,7 @@ impl Mpdb {
                     songtitle.0, slug, song_id
                 );
             } else {
-                error!(
+                warn!(
                     "[FAIL] adding songtitle: {}, slug {}, song_id {}",
                     songtitle.0, slug, song_id
                 );
