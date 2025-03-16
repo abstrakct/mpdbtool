@@ -1,3 +1,5 @@
 /target
 master*.xml
 master*.yml
+logs/
+current

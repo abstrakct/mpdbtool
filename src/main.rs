@@ -12,6 +12,7 @@ use setlists::{Setlists, SongAliases};
 // External crates
 use clap::Parser;
 use config::Config;
+use flexi_logger::{Duplicate, FileSpec, Logger, WriteMode};
 use log::{debug, error, info};
 
 const CONFIG_FILE: &str = "mpdbtoolconfig.toml";
@@ -177,7 +178,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Initialize logger
     // env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
-    pretty_env_logger::init();
+    // pretty_env_logger::init();
+    Logger::try_with_env_or_str("info")?
+        .log_to_file(FileSpec::default().directory("logs").basename("mpdbtool"))
+        .write_mode(WriteMode::BufferAndFlush)
+        .duplicate_to_stderr(Duplicate::Warn)
+        .create_symlink("current")
+        .start()?;
 
     match cli.command {
         Commands::Db { command } => match command {
