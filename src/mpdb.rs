@@ -12,6 +12,7 @@ pub struct DbId(i32);
 pub struct Country {
     id: DbId,
     name: String,
+    code: Option<String>,
 }
 
 #[derive(Deserialize, Debug, Default, Clone, PartialEq, Eq, Hash, Serialize)]
@@ -125,11 +126,11 @@ impl Mpdb {
         }
     }
 
-    fn extract_all_unique_country_names(&self) -> HashSet<String> {
+    fn extract_all_unique_country_names(&self) -> HashSet<(String, Option<String>)> {
         self.master
             .data
             .iter()
-            .map(|s| s.venue.city.country.name.clone())
+            .map(|s| (s.venue.city.country.name.clone(), s.venue.city.country.code.clone()))
             .collect()
     }
 
@@ -255,24 +256,30 @@ impl Mpdb {
         // println!("Existing countries: {existing_countries:?}");
 
         for country in countries {
-            info!("[ADD?] {country}");
+            let country_name = country.0.clone();
+            let country_code = country.1.clone();
+            info!("[ADD?] {country_name}");
 
             // Check if country already exists
-            if existing_countries.contains(&country) {
-                info!("[SKIP] {country} already exists.");
+            if existing_countries.contains(&country_name) {
+                info!("[SKIP] {country_name} already exists.");
                 continue;
             }
 
             // Country doesn't exist, so add it
             let data = serde_json::json!({
-                "name": country,
-                "slug": country.slug()
+                "name": country_name,
+                "slug": country_name.slug(),
+                "code": country_code
             });
+
+            debug!("Sending: {data:?}");
+
             let res = client.post(&url).json(&data).send().await?;
             if res.status().is_success() {
-                info!("[SUCC] {country} added (slug {})", country.slug());
+                info!("[SUCC] {country_name} added (slug {})", country_name.slug());
             } else {
-                error!("[FAIL] adding country {country} (slug {})", country.slug());
+                error!("[FAIL] adding country {country_name} (slug {})", country_name.slug());
             }
         }
 
