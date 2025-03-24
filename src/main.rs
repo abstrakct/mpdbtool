@@ -6,6 +6,7 @@ mod slug;
 mod tests;
 
 use cli::*;
+use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use mpdb::Mpdb;
 use setlists::{Setlists, SongAliases};
 
@@ -32,10 +33,46 @@ impl FileFormat {
 }
 
 async fn populate_db(mpdb: &mut Mpdb) -> Result<(), Box<dyn std::error::Error>> {
-    debug!("{:?}", mpdb.aliases);
+    // debug!("{:?}", mpdb.aliases);
+
+    // Set up progress bars
+    let multipb = MultiProgress::new();
+    let style = ProgressStyle::with_template("[{elapsed_precise}] {bar:80.cyan/blue} {pos:>7}/{len:7} {msg}")
+        .unwrap()
+        .progress_chars("#>-");
+
+    let pb_countries = multipb.add(ProgressBar::new(mpdb.countries_count()));
+    pb_countries.set_style(style.clone());
+    pb_countries.set_message("Countries");
+
+    let pb_cities = multipb.add(ProgressBar::new(mpdb.cities_count()));
+    pb_cities.set_style(style.clone());
+    pb_cities.set_message("Cities");
+
+    let pb_venues = multipb.add(ProgressBar::new(mpdb.venues_count()));
+    pb_venues.set_style(style.clone());
+    pb_venues.set_message("Venues");
+
+    let pb_artists = multipb.add(ProgressBar::new(mpdb.artists_count()));
+    pb_artists.set_style(style.clone());
+    pb_artists.set_message("Artists");
+
+    let pb_songs = multipb.add(ProgressBar::new(mpdb.songs_count()));
+    pb_songs.set_style(style.clone());
+    pb_songs.set_message("Songs");
+
+    let pb_concerts = multipb.add(ProgressBar::new(mpdb.concerts_count()));
+    pb_concerts.set_style(style.clone());
+    pb_concerts.set_message("Concerts");
+
+    let pb_performances = multipb.add(ProgressBar::new(mpdb.performances_count()));
+    pb_performances.set_style(style.clone());
+    pb_performances.set_message("Performances");
+
+    multipb.println("starting!").unwrap();
 
     info!("Populating countries");
-    let result = mpdb.populate_countries().await;
+    let result = mpdb.populate_countries(pb_countries).await;
     match result {
         Ok(c) => {
             info!("Added all countries");
@@ -46,7 +83,7 @@ async fn populate_db(mpdb: &mut Mpdb) -> Result<(), Box<dyn std::error::Error>> 
     }
 
     info!("Populating cities");
-    let result = mpdb.populate_cities().await;
+    let result = mpdb.populate_cities(pb_cities).await;
     match result {
         Ok(c) => {
             info!("Added all cities");
@@ -57,7 +94,7 @@ async fn populate_db(mpdb: &mut Mpdb) -> Result<(), Box<dyn std::error::Error>> 
     }
 
     info!("Populating venues");
-    let result = mpdb.populate_venues().await;
+    let result = mpdb.populate_venues(pb_venues).await;
     match result {
         Ok(c) => {
             info!("Added all venues");
@@ -68,7 +105,7 @@ async fn populate_db(mpdb: &mut Mpdb) -> Result<(), Box<dyn std::error::Error>> 
     }
 
     info!("Populating artists");
-    let result = mpdb.populate_artists().await;
+    let result = mpdb.populate_artists(pb_artists).await;
     match result {
         Ok(c) => {
             info!("Added all artists");
@@ -86,7 +123,7 @@ async fn populate_db(mpdb: &mut Mpdb) -> Result<(), Box<dyn std::error::Error>> 
     }
 
     info!("Populating songtitles");
-    let result = mpdb.populate_songtitles().await;
+    let result = mpdb.populate_songtitles(pb_songs).await;
     match result {
         Ok(c) => {
             info!("Added all songtitles");
@@ -97,7 +134,7 @@ async fn populate_db(mpdb: &mut Mpdb) -> Result<(), Box<dyn std::error::Error>> 
     }
 
     info!("Populating concerts");
-    let result = mpdb.populate_concerts().await;
+    let result = mpdb.populate_concerts(pb_concerts).await;
     match result {
         Ok(c) => {
             info!("Added all concerts");
@@ -108,7 +145,7 @@ async fn populate_db(mpdb: &mut Mpdb) -> Result<(), Box<dyn std::error::Error>> 
     }
 
     info!("Populating sets and performances");
-    let result = mpdb.populate_performances().await;
+    let result = mpdb.populate_performances(pb_performances).await;
     match result {
         Ok(_c) => {
             info!("Added all sets and performances");

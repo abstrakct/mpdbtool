@@ -1,3 +1,4 @@
+use indicatif::ProgressBar;
 use log::{debug, error, info, warn};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
@@ -134,6 +135,10 @@ impl Mpdb {
             .collect()
     }
 
+    pub fn countries_count(&self) -> u64 {
+        self.extract_all_unique_country_names().len() as u64
+    }
+
     fn extract_all_unique_artists(&self) -> HashSet<String> {
         self.master
             .data
@@ -151,12 +156,20 @@ impl Mpdb {
             .collect()
     }
 
+    pub fn artists_count(&self) -> u64 {
+        self.extract_all_unique_artists().len() as u64
+    }
+
     fn extract_all_unique_cities(&self) -> HashSet<(String, String)> {
         self.master
             .data
             .iter()
             .map(|s| (s.venue.city.name.clone(), s.venue.city.country.name.clone()))
             .collect()
+    }
+
+    pub fn cities_count(&self) -> u64 {
+        self.extract_all_unique_cities().len() as u64
     }
 
     fn extract_all_unique_venues(&self) -> HashSet<(String, String, String)> {
@@ -173,6 +186,10 @@ impl Mpdb {
             .collect()
     }
 
+    pub fn venues_count(&self) -> u64 {
+        self.extract_all_unique_venues().len() as u64
+    }
+
     fn extract_all_unique_songs(&self) -> HashSet<(String, Option<String>)> {
         self.master
             .data
@@ -187,6 +204,31 @@ impl Mpdb {
                 })
             })
             .collect()
+    }
+
+    pub fn songs_count(&self) -> u64 {
+        self.extract_all_unique_songs().len() as u64
+    }
+
+    pub fn concerts_count(&self) -> u64 {
+        self.master.data.len() as u64
+    }
+
+    pub fn performances_count(&self) -> u64 {
+        // AI generated, can probably be better... but works
+        self.master
+            .data
+            .iter()
+            .flat_map(|s| {
+                s.sets.set.iter().flat_map(|set| {
+                    set.songs
+                        .as_ref()
+                        .map(|songs| songs.iter())
+                        .unwrap_or_else(|| [].iter())
+                        .map(|song| song.name.clone())
+                })
+            })
+            .count() as u64
     }
 
     #[allow(dead_code)]
@@ -244,7 +286,7 @@ impl Mpdb {
             .map(|s| s.id)
     }
 
-    pub async fn populate_countries(&self) -> reqwest::Result<Vec<Country>> {
+    pub async fn populate_countries(&self, pb: ProgressBar) -> reqwest::Result<Vec<Country>> {
         let countries = self.extract_all_unique_country_names();
         let client = reqwest::Client::new();
         let url = format!("{}/api/countries", self.base_url);
@@ -281,14 +323,18 @@ impl Mpdb {
             } else {
                 error!("[FAIL] adding country {country_name} (slug {})", country_name.slug());
             }
+
+            pb.inc(1);
         }
+
+        pb.finish();
 
         let existing_countries = client.get(&url).send().await?;
         let existing_countries: Vec<Country> = existing_countries.json().await?;
         Ok(existing_countries)
     }
 
-    pub async fn populate_cities(&self) -> reqwest::Result<Vec<City>> {
+    pub async fn populate_cities(&self, pb: ProgressBar) -> reqwest::Result<Vec<City>> {
         let cities = self.extract_all_unique_cities();
         let client = reqwest::Client::new();
         let url = format!("{}/api/cities", self.base_url);
@@ -324,15 +370,17 @@ impl Mpdb {
                 } else {
                     error!("Error adding city: {} in country: {}", city.0, city.1);
                 }
+                pb.inc(1);
             }
         }
+        pb.finish();
 
         let existing_cities = client.get(&url).send().await?;
         let existing_cities: Vec<City> = existing_cities.json().await?;
         Ok(existing_cities)
     }
 
-    pub async fn populate_venues(&self) -> reqwest::Result<Vec<Venue>> {
+    pub async fn populate_venues(&self, pb: ProgressBar) -> reqwest::Result<Vec<Venue>> {
         let venues = self.extract_all_unique_venues();
         let client = reqwest::Client::new();
         let url = format!("{}/api/venues", self.base_url);
@@ -379,15 +427,18 @@ impl Mpdb {
                         venue.0, venue.1, city_id.0, venue.2
                     );
                 }
+
+                pb.inc(1);
             }
         }
+        pb.finish();
 
         let existing_venues = client.get(&url).send().await?;
         let existing_venues: Vec<Venue> = existing_venues.json().await?;
         Ok(existing_venues)
     }
 
-    pub async fn populate_artists(&self) -> reqwest::Result<Vec<Artist>> {
+    pub async fn populate_artists(&self, pb: ProgressBar) -> reqwest::Result<Vec<Artist>> {
         let artists = self.extract_all_unique_artists();
         let client = reqwest::Client::new();
         let url = format!("{}/api/artists", self.base_url);
@@ -404,6 +455,7 @@ impl Mpdb {
         } else {
             warn!("[FAIL] adding Motorpsycho");
         }
+        pb.inc(1);
 
         let existing_artists = client.get(&url).send().await?;
         let existing_artists: Vec<Artist> = existing_artists.json().await?;
@@ -430,7 +482,9 @@ impl Mpdb {
             } else {
                 error!("[FAIL] adding artist: {}", artist);
             }
+            pb.inc(1);
         }
+        pb.finish();
 
         let existing_artists = client.get(&url).send().await?;
         let existing_artists: Vec<Artist> = existing_artists.json().await?;
@@ -504,7 +558,7 @@ impl Mpdb {
         Ok(())
     }
 
-    pub async fn populate_songtitles(&self) -> reqwest::Result<Vec<Songtitle>> {
+    pub async fn populate_songtitles(&self, pb: ProgressBar) -> reqwest::Result<Vec<Songtitle>> {
         let songtitles = self.extract_all_unique_songs();
         let client = reqwest::Client::new();
         let url = format!("{}/api/songtitles", self.base_url);
@@ -569,7 +623,10 @@ impl Mpdb {
                     songtitle.0, slug, song_id
                 );
             }
+
+            pb.inc(1);
         }
+        pb.finish();
 
         let existing_songtitles = client.get(&url).send().await?;
         let existing_songtitles: Vec<Songtitle> = existing_songtitles.json().await?;
@@ -577,7 +634,7 @@ impl Mpdb {
         Ok(existing_songtitles)
     }
 
-    pub async fn populate_concerts(&self) -> reqwest::Result<Vec<Concert>> {
+    pub async fn populate_concerts(&self, pb: ProgressBar) -> reqwest::Result<Vec<Concert>> {
         let client = reqwest::Client::new();
         let url = format!("{}/api/concerts", self.base_url);
 
@@ -631,14 +688,17 @@ impl Mpdb {
                     error!("[FAIL] adding concert {}", concert.slug);
                 }
             }
+
+            pb.inc(1);
         }
+        pb.finish();
 
         let existing_concerts = client.get(&url).send().await?;
         let existing_concerts: Vec<Concert> = existing_concerts.json().await?;
         Ok(existing_concerts)
     }
 
-    pub async fn populate_performances(&self) -> reqwest::Result<()> {
+    pub async fn populate_performances(&self, pb: ProgressBar) -> reqwest::Result<()> {
         let client = reqwest::Client::new();
         let set_url = format!("{}/api/sets", self.base_url);
         let performance_url = format!("{}/api/performances", self.base_url);
@@ -721,12 +781,14 @@ impl Mpdb {
                         } else {
                             warn!("[FAIL] performance of song '{}'", performance.name);
                         }
+                        pb.inc(1);
                     }
                 } else {
                     info!("[NULL] no performances found in this set");
                 }
             }
         }
+        pb.finish();
 
         Ok(())
     }
