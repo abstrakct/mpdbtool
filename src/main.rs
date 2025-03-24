@@ -37,9 +37,10 @@ async fn populate_db(mpdb: &mut Mpdb) -> Result<(), Box<dyn std::error::Error>> 
 
     // Set up progress bars
     let multipb = MultiProgress::new();
-    let style = ProgressStyle::with_template("[{elapsed_precise}] {bar:80.cyan/blue} {pos:>7}/{len:7} {msg}")
-        .unwrap()
-        .progress_chars("#>-");
+    let style =
+        ProgressStyle::with_template("[{elapsed_precise}] [{percent:>3}%] {bar:80.cyan/blue} {pos:>7}/{len:7} {msg}")
+            .unwrap()
+            .progress_chars("#>-");
 
     let pb_countries = multipb.add(ProgressBar::new(mpdb.countries_count()));
     pb_countries.set_style(style.clone());
