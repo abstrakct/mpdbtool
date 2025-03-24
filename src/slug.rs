@@ -21,6 +21,7 @@ impl Slug for String {
             .replace("---", "-")
             .replace("--", "-")
             .trim_end_matches('-')
+            .trim_start_matches('-')
             .to_string()
     }
 }
