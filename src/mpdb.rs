@@ -301,6 +301,7 @@ impl Mpdb {
             let country_name = country.0.clone();
             let country_code = country.1.clone();
             info!("[ADD?] {country_name}");
+            pb.set_message(format!("Country: {}", country_name));
 
             // Check if country already exists
             if existing_countries.contains(&country_name) {
@@ -327,7 +328,7 @@ impl Mpdb {
             pb.inc(1);
         }
 
-        pb.finish();
+        pb.finish_with_message("Countries");
 
         let existing_countries = client.get(&url).send().await?;
         let existing_countries: Vec<Country> = existing_countries.json().await?;
@@ -348,6 +349,7 @@ impl Mpdb {
 
         for city in cities {
             info!("[ADD?] city {} in country {}", city.0, city.1);
+            pb.set_message(format!("City: {}", city.0.clone()));
 
             if let Some(country_id) = self.get_country_id(&city.1) {
                 // Check if city already exists
@@ -373,7 +375,7 @@ impl Mpdb {
                 pb.inc(1);
             }
         }
-        pb.finish();
+        pb.finish_with_message("Cities");
 
         let existing_cities = client.get(&url).send().await?;
         let existing_cities: Vec<City> = existing_cities.json().await?;
@@ -394,6 +396,7 @@ impl Mpdb {
 
         for venue in venues {
             info!("[ADD?] venue {} in city {} in country {}", venue.0, venue.1, venue.2);
+            pb.set_message(format!("Venue: {}", venue.0.clone()));
 
             if let Some(city_id) = self.get_city_id(&venue.1, &venue.2) {
                 // Check if venue already exists
@@ -431,7 +434,7 @@ impl Mpdb {
                 pb.inc(1);
             }
         }
-        pb.finish();
+        pb.finish_with_message("Venues");
 
         let existing_venues = client.get(&url).send().await?;
         let existing_venues: Vec<Venue> = existing_venues.json().await?;
@@ -463,6 +466,7 @@ impl Mpdb {
 
         for artist in artists {
             info!("[ADD?] artist {}", artist);
+            pb.set_message(format!("Artist: {}", artist));
 
             // Check if artist already exists
             if existing_artists.contains(&artist) {
@@ -484,7 +488,7 @@ impl Mpdb {
             }
             pb.inc(1);
         }
-        pb.finish();
+        pb.finish_with_message("Artists");
 
         let existing_artists = client.get(&url).send().await?;
         let existing_artists: Vec<Artist> = existing_artists.json().await?;
@@ -573,6 +577,7 @@ impl Mpdb {
         let existing_songtitles: HashSet<String> = existing_songtitles.iter().map(|s| s.title.clone()).collect();
 
         for songtitle in songtitles {
+            pb.set_message(format!("Songtitle: {}", songtitle.0.clone()));
             // Check if songtitle already exists
             if existing_songtitles.contains(&songtitle.0) {
                 info!(
@@ -626,7 +631,7 @@ impl Mpdb {
 
             pb.inc(1);
         }
-        pb.finish();
+        pb.finish_with_message("Songs");
 
         let existing_songtitles = client.get(&url).send().await?;
         let existing_songtitles: Vec<Songtitle> = existing_songtitles.json().await?;
@@ -643,6 +648,7 @@ impl Mpdb {
         debug!("Existing concerts: {:?}", existing_concerts);
 
         for setlist in self.master.data.iter() {
+            pb.set_message(format!("Concert: {}", setlist.event_date));
             // Create a concert object
             let artist_id = self.get_artist_id(&setlist.artist.name);
             let venue_id = self.get_venue_id(&setlist.venue.name);
@@ -690,7 +696,7 @@ impl Mpdb {
 
             pb.inc(1);
         }
-        pb.finish();
+        pb.finish_with_message("Concerts");
 
         let existing_concerts = client.get(&url).send().await?;
         let existing_concerts: Vec<Concert> = existing_concerts.json().await?;
@@ -761,6 +767,7 @@ impl Mpdb {
 
                 if set.songs.is_some() {
                     for performance in set.songs.clone().unwrap() {
+                        pb.set_message(format!("Performance of: {}", performance.name.clone()));
                         let song_id = self.get_song_id(performance.name.clone());
                         let songtitle_id = self.get_songtitle_id(performance.name.clone());
                         info!("[ADD!] performance of song '{}'", performance.name);
@@ -787,7 +794,7 @@ impl Mpdb {
                 }
             }
         }
-        pb.finish();
+        pb.finish_with_message("Performances");
 
         Ok(())
     }
