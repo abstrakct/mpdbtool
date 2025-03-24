@@ -15,6 +15,7 @@ impl Slug for String {
     fn slug(&self) -> String {
         self.replace("Ü", "u")
             .to_lowercase()
+            .replace("'s", "s")
             .replace(|c: char| !c.is_alphanumeric(), "-")
             .replace(" ", "-")
             .trim_ascii()
