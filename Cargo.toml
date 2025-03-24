@@ -15,3 +15,4 @@ chrono = { version = "0.4.40", features = ["serde"] }
 clap = { version = "4.0", features = ["derive"] }
 serde_yml = "0.0.12"
 flexi_logger = "0.29.8"
+indicatif = "0.17.11"
