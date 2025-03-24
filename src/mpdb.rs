@@ -657,8 +657,7 @@ impl Mpdb {
             };
 
             // Now we can create the slug for the concert
-            let slug = concert.identifier_with_prefix(setlist.artist.name.clone());
-            concert.slug = slug;
+            concert.slug = concert.identifier_with_prefix(setlist.artist.name.clone());
 
             // Loop through the existing concerts and check if the slug already exists
             // If it does, update the concert
