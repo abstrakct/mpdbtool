@@ -536,6 +536,10 @@ impl Mpdb {
                 );
             }
 
+            // Find songtitle id for the default songtitle
+            let songtitle_json: serde_json::Value = res.json().await?;
+            let songtitle_id = songtitle_json["id"].as_i64().unwrap_or_default();
+
             // add the aliases
             for alias in songwithaliases.aliases {
                 let slug = alias.name.slug();
@@ -544,6 +548,7 @@ impl Mpdb {
                     "slug": slug,
                     "is_default": false,
                     "song_id": song_id,
+                    "alias_for": Some(songtitle_id)
                 });
                 let res = client.post(&url).json(&data).send().await?;
                 if res.status().is_success() {
