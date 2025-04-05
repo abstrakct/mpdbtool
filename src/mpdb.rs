@@ -772,12 +772,12 @@ impl Mpdb {
                 let artist_id = self.get_artist_id(&setlist.artist.name);
 
                 if set.songs.is_some() {
-                    let mut sort_order: i32 = 1;
-                    for performance in set.songs.clone().unwrap() {
+                    for (i, performance) in set.songs.clone().unwrap().iter().enumerate() {
                         pb.set_message(format!("Performance of: {}", performance.name.clone()));
                         let song_id = self.get_song_id(performance.name.clone());
                         let songtitle_id = self.get_songtitle_id(performance.name.clone());
                         info!("[ADD!] performance of song '{}'", performance.name);
+
                         let perfdata = Performance {
                             segue: performance.segue.unwrap_or(false),
                             set_id: DbId(set_id),
@@ -785,7 +785,7 @@ impl Mpdb {
                             artist_id: artist_id.unwrap(),
                             song_id: song_id.unwrap(),
                             songtitle_id: songtitle_id.unwrap(),
-                            sort_order,
+                            sort_order: i as i32,
                             ..Default::default()
                         };
 
@@ -797,7 +797,6 @@ impl Mpdb {
                             warn!("payload: {}", serde_json::json!(&perfdata));
                         }
 
-                        sort_order += 1;
                         pb.inc(1);
                     }
                 } else {
