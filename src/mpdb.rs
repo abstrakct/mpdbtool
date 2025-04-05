@@ -73,6 +73,7 @@ pub struct Performance {
     songtitle_id: DbId,
     artist_id: DbId,
     segue: bool,
+    sort_order: i32,
 }
 
 #[allow(dead_code)]
@@ -771,6 +772,7 @@ impl Mpdb {
                 let artist_id = self.get_artist_id(&setlist.artist.name);
 
                 if set.songs.is_some() {
+                    let mut sort_order: i32 = 1;
                     for performance in set.songs.clone().unwrap() {
                         pb.set_message(format!("Performance of: {}", performance.name.clone()));
                         let song_id = self.get_song_id(performance.name.clone());
@@ -783,6 +785,7 @@ impl Mpdb {
                             artist_id: artist_id.unwrap(),
                             song_id: song_id.unwrap(),
                             songtitle_id: songtitle_id.unwrap(),
+                            sort_order,
                             ..Default::default()
                         };
 
@@ -791,7 +794,10 @@ impl Mpdb {
                             info!("[SUCC] performance of song '{}' added", performance.name);
                         } else {
                             warn!("[FAIL] performance of song '{}'", performance.name);
+                            warn!("payload: {}", serde_json::json!(&perfdata));
                         }
+
+                        sort_order += 1;
                         pb.inc(1);
                     }
                 } else {
