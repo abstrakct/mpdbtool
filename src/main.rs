@@ -6,7 +6,6 @@ mod slug;
 mod tests;
 
 use cli::*;
-use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use mpdb::Mpdb;
 use setlists::{Setlists, SongAliases};
 
@@ -14,6 +13,7 @@ use setlists::{Setlists, SongAliases};
 use clap::Parser;
 use config::Config;
 use flexi_logger::{Duplicate, FileSpec, Logger, WriteMode};
+use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use log::{debug, error, info};
 
 const CONFIG_FILE: &str = "mpdbtoolconfig.toml";

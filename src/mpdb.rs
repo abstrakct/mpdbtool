@@ -62,6 +62,7 @@ pub struct Set {
     concert_id: DbId,
     name: Option<String>,
     unique_name: String,
+    sort_order: i32,
 }
 
 #[derive(Deserialize, Debug, Default, Clone, PartialEq, Eq, Hash, Serialize)]
@@ -723,7 +724,7 @@ impl Mpdb {
             let concert_slug = concert.identifier_with_prefix(setlist.artist.name.clone());
             let concert_id = self.get_concert_id(concert_slug.clone()).unwrap_or_default();
 
-            for set in setlist.sets.set.iter() {
+            for (i, set) in setlist.sets.set.iter().enumerate() {
                 let set_name = if set.encore.is_some() {
                     Some(format!("Encore {}", set.encore.as_ref().unwrap()))
                 } else if set.name.is_some() {
@@ -741,6 +742,7 @@ impl Mpdb {
                         concert_slug.clone(),
                         set_name.clone().unwrap_or("main set".to_string()).slug()
                     ),
+                    sort_order: i as i32,
                     ..Default::default()
                 };
 
