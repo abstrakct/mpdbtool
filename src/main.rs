@@ -209,6 +209,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mpdb_base_url = settings.get_string("mpdb_base_url")?;
     let master_path = settings.get_string("master_path")?;
+    let master_dir = settings.get_string("master_dir")?;
     let master_filename = format!("{}/{}", master_path, settings.get_string("master_filename")?);
     let aliases_filename = format!("{}/{}", master_path, settings.get_string("aliases_filename")?);
 
@@ -228,7 +229,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     match cli.command {
         Commands::Db { command } => match command {
-            DbCommands::Populate { xml, yml } => {
+            DbCommands::Populate { xml, yml, dir } => {
                 let mut mpdb = Mpdb::new(mpdb_base_url);
 
                 // Determine file format
@@ -239,10 +240,39 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 };
 
                 // Load and parse files
-                debug!("Loading master file: {}.{}", master_filename, format.extension());
-                let master_content = std::fs::read_to_string(format!("{}.{}", master_filename, format.extension()))?;
-                debug!("Loading alias file: {}.{}", aliases_filename, format.extension());
-                let alias_content = std::fs::read_to_string(format!("{}.{}", aliases_filename, format.extension()))?;
+                let (master_content, alias_content) = if !dir {
+                    debug!("Loading master file: {}.{}", master_filename, format.extension());
+                    let master_content =
+                        std::fs::read_to_string(format!("{}.{}", master_filename, format.extension()))?;
+                    debug!("Loading alias file: {}.{}", aliases_filename, format.extension());
+                    let alias_content =
+                        std::fs::read_to_string(format!("{}.{}", aliases_filename, format.extension()))?;
+                    (master_content, alias_content)
+                } else {
+                    let mut master_content = String::new();
+                    let mut entries: Vec<_> = std::fs::read_dir(master_dir)?.collect();
+                    entries.sort_by(|a, b| {
+                        a.as_ref()
+                            .unwrap()
+                            .path()
+                            .file_name()
+                            .unwrap()
+                            .cmp(b.as_ref().unwrap().path().file_name().unwrap())
+                    });
+                    for entry in entries {
+                        let entry = entry?;
+                        let path = entry.path();
+                        if path.extension().and_then(|s| s.to_str()) == Some(format.extension()) {
+                            debug!("Loading file: {}", path.display());
+                            let content = std::fs::read_to_string(path)?;
+                            master_content.push_str(&content);
+                            master_content.push('\n');
+                        }
+                    }
+                    let alias_content =
+                        std::fs::read_to_string(format!("{}.{}", aliases_filename, format.extension()))?;
+                    (master_content, alias_content)
+                };
 
                 mpdb.master = match format {
                     FileFormat::Xml => {

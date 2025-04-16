@@ -43,6 +43,9 @@ pub enum DbCommands {
             conflicts_with = "xml"
         )]
         yml: bool,
+
+        #[arg(short = 'd', long = "directory", help = "Input data is in a directory")]
+        dir: bool,
     },
     /// Reset the database (delete all data) (not implemented yet)
     Reset,
