@@ -27,6 +27,7 @@ pub struct City {
 pub struct Venue {
     id: DbId,
     name: String,
+    slug: String,
     city_id: DbId,
 }
 
@@ -112,6 +113,11 @@ pub struct Mpdb {
     pub songtitles: Vec<Songtitle>,
     pub aliases: SongAliases,
     pub concerts: Vec<Concert>,
+}
+
+// todo: we could impl this for Venue
+fn venue_slug(venue: &String, city: &String, country: &String) -> String {
+    format!("{}-{}-{}", venue.slug(), city.slug(), country.slug())
 }
 
 impl Mpdb {
@@ -258,8 +264,8 @@ impl Mpdb {
             .map(|c| c.id)
     }
 
-    fn get_venue_id(&self, venue_name: &str) -> Option<DbId> {
-        self.venues.iter().find(|v| v.name == venue_name).map(|v| v.id)
+    fn get_venue_id(&self, slug: &str) -> Option<DbId> {
+        self.venues.iter().find(|v| v.slug == slug).map(|v| v.id)
     }
 
     fn get_artist_id(&self, artist_name: &str) -> Option<DbId> {
@@ -412,7 +418,7 @@ impl Mpdb {
 
                 // venue doesn't exist, so add it
                 let unique_name = format!("{}-{}", venue.0.slug(), venue.1.slug());
-                let slug = format!("{}-{}-{}", venue.0.slug(), venue.1.slug(), venue.2.slug());
+                let slug = venue_slug(&venue.0, &venue.1, &venue.2);
                 let data = serde_json::json!({
                     "name": venue.0,
                     "city_id": city_id,
@@ -581,12 +587,15 @@ impl Mpdb {
 
         let existing_songtitles = client.get(&url).send().await?;
         let existing_songtitles: Vec<Songtitle> = existing_songtitles.json().await?;
-        let existing_songtitles: HashSet<String> = existing_songtitles.iter().map(|s| s.title.clone()).collect();
+        let existing_songtitles: HashSet<String> = existing_songtitles
+            .iter()
+            .map(|s| s.title.clone().to_lowercase())
+            .collect();
 
         for songtitle in songtitles {
             pb.set_message(format!("Songtitle: {}", songtitle.0.clone()));
             // Check if songtitle already exists
-            if existing_songtitles.contains(&songtitle.0) {
+            if existing_songtitles.contains(&songtitle.0.to_lowercase()) {
                 info!(
                     "[SKIP] songtitle {} (slug {}) already exists.",
                     songtitle.0,
@@ -658,7 +667,14 @@ impl Mpdb {
             pb.set_message(format!("Concert: {}", setlist.event_date));
             // Create a concert object
             let artist_id = self.get_artist_id(&setlist.artist.name);
-            let venue_id = self.get_venue_id(&setlist.venue.name);
+            let venue_slug = venue_slug(
+                &setlist.venue.name,
+                &setlist.venue.city.name,
+                &setlist.venue.city.country.name,
+            );
+            // info!("Looking up venue id for slug {venue_slug}");
+            let venue_id = self.get_venue_id(&venue_slug);
+            // info!("Found venue id: {:?}",venue_id);
             let mut concert = Concert {
                 artist_id: artist_id.unwrap_or_default(),
                 date: chrono::NaiveDate::parse_from_str(&setlist.event_date, "%d-%m-%Y").unwrap(),
