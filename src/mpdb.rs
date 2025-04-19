@@ -115,7 +115,6 @@ pub struct Mpdb {
     pub concerts: Vec<Concert>,
 }
 
-// todo: we could impl this for Venue
 fn venue_slug(venue: &String, city: &String, country: &String) -> String {
     format!("{}-{}-{}", venue.slug(), city.slug(), country.slug())
 }
@@ -237,20 +236,6 @@ impl Mpdb {
                 })
             })
             .count() as u64
-    }
-
-    #[allow(dead_code)]
-    fn setlists_to_db(master: Setlists) -> reqwest::Result<()> {
-        let setlist = master.data[3].clone();
-        let x = serde_json::to_string(&setlist).unwrap();
-        println!("{}", x);
-
-        //let countries = get_all_countries(&master);
-        //println!("{:?}", countries);
-        //let cities = get_all_cities(&master);
-        //println!("{:?}", cities);
-
-        Ok(())
     }
 
     fn get_country_id(&self, country_name: &str) -> Option<DbId> {
@@ -672,9 +657,7 @@ impl Mpdb {
                 &setlist.venue.city.name,
                 &setlist.venue.city.country.name,
             );
-            // info!("Looking up venue id for slug {venue_slug}");
             let venue_id = self.get_venue_id(&venue_slug);
-            // info!("Found venue id: {:?}",venue_id);
             let mut concert = Concert {
                 artist_id: artist_id.unwrap_or_default(),
                 date: chrono::NaiveDate::parse_from_str(&setlist.event_date, "%d-%m-%Y").unwrap(),
